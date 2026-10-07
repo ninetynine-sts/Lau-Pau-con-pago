@@ -115,3 +115,13 @@ lib/i18n.ts           textos ES/CA
 lib/db/schema.ts      esquema de la base de datos (migraciones en drizzle/)
 components/effects.tsx comportamiento visual del diseño original (corazones, «&», etc.)
 ```
+
+## Demo de prueba (artifact)
+
+`demo/` es una versión de la tienda que funciona entera en el navegador, con datos, pagos y
+correos simulados. Reutiliza los componentes, textos y estilos reales; solo sustituye el
+servidor (`demo/mock`) y la navegación (`demo/shims`). Para regenerarla tras cambiar la web:
+
+```bash
+npm run demo:build      # genera demo/dist (index.html, app.js, app.css y las imágenes)
+```

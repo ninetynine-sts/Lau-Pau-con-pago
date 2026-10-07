@@ -11,7 +11,8 @@
     "db:migrate": "node scripts/migrate.mjs",
     "admin:create": "node scripts/create-admin.mjs",
     "test": "vitest run",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "demo:build": "node demo/build.mjs"
   },
   "engines": {
     "node": ">=20"
