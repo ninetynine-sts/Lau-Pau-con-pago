@@ -106,7 +106,8 @@ function initLoader() {
     if (done) return;
     done = true;
     loader.dataset.done = 'true';
-    window.setTimeout(() => loader.remove(), 700);
+    // Se oculta en vez de borrarse: el nodo es de React y debe seguir donde React lo dejó.
+    window.setTimeout(() => (loader.hidden = true), 700);
   };
   const whenReady = () => window.setTimeout(remove, Math.max(0, MIN - (performance.now() - start)));
   if (document.readyState === 'complete') whenReady();
