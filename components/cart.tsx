@@ -16,6 +16,10 @@ type CartCtx = {
   set: (variantId: number, quantity: number) => void;
   remove: (variantId: number) => void;
   clear: () => void;
+  /** Panel lateral de la cesta. */
+  drawerOpen: boolean;
+  openDrawer: () => void;
+  closeDrawer: () => void;
 };
 
 const Ctx = createContext<CartCtx | null>(null);
@@ -45,6 +49,7 @@ function write(items: CartItem[]) {
 export function CartProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([]);
   const [ready, setReady] = useState(false);
+  const [drawerOpen, setDrawerOpen] = useState(false);
 
   useEffect(() => {
     setItems(read());
@@ -78,9 +83,12 @@ export function CartProvider({ children }: { children: ReactNode }) {
       set: (variantId, quantity) =>
         update((prev) => prev.map((i) => (i.variantId === variantId ? { ...i, quantity: Math.max(0, Math.min(99, quantity)) } : i))),
       remove: (variantId) => update((prev) => prev.filter((i) => i.variantId !== variantId)),
-      clear: () => update(() => [])
+      clear: () => update(() => []),
+      drawerOpen,
+      openDrawer: () => setDrawerOpen(true),
+      closeDrawer: () => setDrawerOpen(false)
     }),
-    [items, ready, update]
+    [items, ready, update, drawerOpen]
   );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;

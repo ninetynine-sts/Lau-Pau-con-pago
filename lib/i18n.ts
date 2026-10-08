@@ -332,6 +332,20 @@ const es = {
     note: 'Revisamos cada solicitud y te confirmamos las opciones y el precio final, con cualquier posible suplemento, antes de que pagues nada.',
     fullSheet: 'Ver la ficha completa'
   },
+  drawer: {
+    title: 'Tu cesta',
+    close: 'Cerrar la cesta',
+    empty: 'Tu cesta está vacía. Echa un vistazo a la selección y encuentra ese próximo flechazo.',
+    emptyCta: 'Descubrir productos',
+    checkout: 'Finalizar compra',
+    viewCart: 'Ver la cesta completa',
+    note: 'Envío y descuentos en el siguiente paso.',
+    items: (n: number) => (n === 1 ? '1 artículo' : `${n} artículos`),
+    dragHint: 'Desliza hacia abajo para cerrar'
+  },
+  marquee: ['Pequeños detalles', 'Mucho de ti', 'Tu inicial', 'Tu detalle', 'Desde Andorra'],
+  menuClose: 'Cerrar el menú',
+  heroChip: 'Ver el detalle',
   notFound: {
     title: 'No encontramos esta página',
     text: 'Puede que el enlace haya cambiado. Vuelve al inicio o echa un vistazo al catálogo.',
@@ -649,6 +663,20 @@ const ca: Dict = {
     note: 'Revisem cada sol·licitud i et confirmem les opcions i el preu final, amb qualsevol possible suplement, abans que paguis res.',
     fullSheet: 'Veure la fitxa completa'
   },
+  drawer: {
+    title: 'La teva cistella',
+    close: 'Tanca la cistella',
+    empty: 'La cistella és buida. Fes una ullada a la selecció i troba el teu proper caprici.',
+    emptyCta: 'Descobreix els productes',
+    checkout: 'Finalitza la compra',
+    viewCart: 'Veure tota la cistella',
+    note: 'Enviament i descomptes al pas següent.',
+    items: (n) => (n === 1 ? '1 article' : `${n} articles`),
+    dragHint: 'Llisca cap avall per tancar'
+  },
+  marquee: ['Petits detalls', 'Molt de tu', 'La teva inicial', 'El teu detall', 'Des d’Andorra'],
+  menuClose: 'Tanca el menú',
+  heroChip: 'Veure el detall',
   notFound: {
     title: 'No trobem aquesta pàgina',
     text: 'Potser l’enllaç ha canviat. Torna a l’inici o fes una ullada al catàleg.',

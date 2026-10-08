@@ -1,8 +1,8 @@
 'use client';
 
-import Link from 'next/link';
 import { useMemo, useState } from 'react';
-import { Amp, Sheen } from './brand';
+import { Minus, Plus } from '@phosphor-icons/react/dist/ssr';
+import { BtnIcon } from './brand';
 import { useCart } from './cart';
 
 export type BuyVariant = { id: number; name: string | null; stock: number | null };
@@ -23,12 +23,13 @@ export type BuyLabels = {
   maxStock: string; // con {n}
 };
 
-export function AddToCart({ variants, labels, cartHref }: { variants: BuyVariant[]; labels: BuyLabels; cartHref: string }) {
-  const { add, items } = useCart();
+/** Añadir a la cesta: sin esperas artificiales; al añadir se abre la cesta lateral. */
+export function AddToCart({ variants, labels }: { variants: BuyVariant[]; labels: BuyLabels; cartHref?: string }) {
+  const { add, items, openDrawer } = useCart();
   const firstAvailable = variants.find((v) => v.stock === null || v.stock > 0) ?? variants[0];
   const [variantId, setVariantId] = useState<number | undefined>(firstAvailable?.id);
   const [qty, setQty] = useState(1);
-  const [status, setStatus] = useState<'idle' | 'busy' | 'added'>('idle');
+  const [status, setStatus] = useState<'idle' | 'added'>('idle');
   const [error, setError] = useState('');
 
   const v = variants.find((x) => x.id === variantId);
@@ -52,12 +53,10 @@ export function AddToCart({ variants, labels, cartHref }: { variants: BuyVariant
       setError(labels.maxStock.replace('{n}', String(v.stock ?? 0)));
       return;
     }
-    setStatus('busy');
-    window.setTimeout(() => {
-      add(v.id, qty);
-      setStatus('added');
-      setQty(1);
-    }, 450);
+    add(v.id, qty);
+    setStatus('added');
+    setQty(1);
+    openDrawer();
   };
 
   return (
@@ -96,7 +95,7 @@ export function AddToCart({ variants, labels, cartHref }: { variants: BuyVariant
           <label htmlFor="cantidad">{labels.quantity}</label>
           <div className="lp-stepper">
             <button type="button" aria-label={labels.less} disabled={qty <= 1} onClick={() => setQty((q) => Math.max(1, q - 1))}>
-              &minus;
+              <Minus size={16} weight="bold" aria-hidden="true" />
             </button>
             <input
               id="cantidad"
@@ -108,7 +107,7 @@ export function AddToCart({ variants, labels, cartHref }: { variants: BuyVariant
               onChange={(e) => setQty(Math.max(1, Math.min(99, Math.floor(Number(e.target.value) || 1))))}
             />
             <button type="button" aria-label={labels.more} disabled={qty >= max} onClick={() => setQty((q) => Math.min(max || 1, q + 1))}>
-              +
+              <Plus size={16} weight="bold" aria-hidden="true" />
             </button>
           </div>
           {error ? (
@@ -120,24 +119,10 @@ export function AddToCart({ variants, labels, cartHref }: { variants: BuyVariant
       ) : null}
 
       <div className="lp-buy__row">
-        <button
-          className="lp-btn lp-btn--lg"
-          type="button"
-          onClick={onAdd}
-          disabled={soldOut || max <= 0}
-          data-busy={status === 'busy'}
-          aria-busy={status === 'busy'}
-        >
-          <Sheen />
-          {status === 'busy' ? <Amp className="lp-btn__amp" /> : null}
+        <button className="lp-btn lp-btn--lg lp-btn--icon" type="button" onClick={onAdd} disabled={soldOut || max <= 0}>
           {soldOut ? labels.soldOut : labels.addToCart}
+          {soldOut ? null : <BtnIcon kind={status === 'added' ? 'check' : 'plus'} />}
         </button>
-        {status === 'added' ? (
-          <Link className="lp-btn lp-btn--ghost" href={cartHref}>
-            <Sheen />
-            {labels.viewCart} &rarr;
-          </Link>
-        ) : null}
       </div>
       <p className="lp-status" role="status" aria-live="polite">
         {status === 'added' ? `✓ ${labels.added}` : ''}

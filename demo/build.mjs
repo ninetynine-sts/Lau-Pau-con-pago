@@ -53,6 +53,9 @@ await build({
   logLevel: 'warning'
 });
 
+// Rutas absolutas de recursos («/laupau/...») → relativas, para que funcionen dentro del artifact.
+writeFileSync(join(OUT, 'app.js'), readFileSync(join(OUT, 'app.js'), 'utf8').replaceAll('"/laupau/', '"laupau/'));
+
 const css = [
   readFileSync(join(REPO, 'app/styles/laupau.css'), 'utf8').replaceAll("url('/laupau/", "url('laupau/"),
   readFileSync(join(REPO, 'app/styles/shop.css'), 'utf8'),

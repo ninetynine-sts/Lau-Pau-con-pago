@@ -100,7 +100,9 @@ function App() {
       <DemoBar />
       {r.kind === 'public' ? (
         <PublicShell lang={r.lang} key={r.lang}>
-          <div key={key}>{r.node}</div>
+          <div key={key} className="lp-page">
+            {r.node}
+          </div>
         </PublicShell>
       ) : (
         <div key={key}>{r.node}</div>
@@ -109,5 +111,6 @@ function App() {
   );
 }
 
+document.documentElement.classList.add('lp-js');
 if (!window.location.hash.startsWith('#/')) history.replaceState(null, '', '#/ca');
 createRoot(document.getElementById('app')!).render(<App />);

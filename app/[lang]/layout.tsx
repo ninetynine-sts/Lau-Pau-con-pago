@@ -5,6 +5,8 @@ import '../styles/laupau.css';
 import '../styles/shop.css';
 import { Ambient, AmpTemplate, Loader, SvgDefs } from '@/components/brand';
 import { Effects } from '@/components/effects';
+import { CartDrawer } from '@/components/cart-drawer';
+import { BOOT } from '@/lib/boot';
 import { CartProvider } from '@/components/cart';
 import { Footer, Header } from '@/components/site-chrome';
 import { isLang, type Lang } from '@/lib/routes';
@@ -46,11 +48,11 @@ export default async function PublicLayout({ children, params }: { children: Rea
       <head>
         <link rel="preload" href="/laupau/fonts/fraunces-regular.woff" as="font" type="font/woff" crossOrigin="" />
         <link rel="preload" href="/laupau/fonts/manrope.woff" as="font" type="font/woff" crossOrigin="" />
-        {/* En la misma sesión no se repite la pantalla de carga. */}
+        {/* Marca que hay JavaScript (las apariciones dependen de él) y salta la carga si ya se vio. */}
         <script
           nonce={nonce}
           dangerouslySetInnerHTML={{
-            __html: "try{if(sessionStorage.getItem('lp-visto'))document.documentElement.className+=' lp-seen'}catch(e){}"
+            __html: BOOT
           }}
         />
       </head>
@@ -66,6 +68,7 @@ export default async function PublicLayout({ children, params }: { children: Rea
           <Header lang={lang} loggedIn={!!user} />
           <main id="contenido">{children}</main>
           <Footer lang={lang} storeEmail={settings.storeEmail} instagram={settings.instagram} />
+          <CartDrawer lang={lang} />
           <Effects />
         </CartProvider>
       </body>

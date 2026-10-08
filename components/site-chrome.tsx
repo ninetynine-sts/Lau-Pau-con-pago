@@ -1,10 +1,11 @@
 /**
- * Cabecera y pie de la web pública.
+ * Cabecera y pie de la web pública. Sin dependencias de servidor: la demo los reutiliza.
  */
 import Link from 'next/link';
 import { path, type Lang } from '@/lib/routes';
 import { t } from '@/lib/i18n';
-import { CartLink, LangSwitch } from './site-chrome-client';
+import { Amp } from './brand';
+import { LOGO_SRC, SiteHeader } from './site-chrome-client';
 
 export function Header({ lang, loggedIn }: { lang: Lang; loggedIn: boolean }) {
   const d = t(lang);
@@ -14,41 +15,7 @@ export function Header({ lang, loggedIn }: { lang: Lang; loggedIn: boolean }) {
     { href: path(lang, 'quienes-somos'), label: d.nav.about },
     { href: `${path(lang)}#contacto`, label: d.nav.contact }
   ];
-  return (
-    <header className="lp-header" data-header>
-      <div className="lp-container lp-header__inner">
-        <Link className="lp-logo" href={path(lang)} aria-label={d.logoHome}>
-          <img src="/laupau/marca/logo-final.png" alt={d.logoAlt} width={512} height={512} fetchPriority="high" />
-        </Link>
-        <div className="lp-header__tools">
-          <button className="lp-nav__toggle" type="button" data-nav-toggle aria-expanded="false" aria-controls="lp-nav" hidden>
-            <span className="lp-nav__bars" aria-hidden="true">
-              <span />
-              <span />
-              <span />
-            </span>
-            {d.menu}
-          </button>
-          <nav className="lp-nav" id="lp-nav" data-nav aria-label="Principal">
-            <ul>
-              {items.map((i) => (
-                <li key={i.href}>
-                  <Link href={i.href}>{i.label}</Link>
-                </li>
-              ))}
-              <li className="lp-nav__account">
-                <Link href={path(lang, 'cuenta')}>{loggedIn ? d.account : d.accountPages.login}</Link>
-              </li>
-              <li className="lp-nav__lang">
-                <LangSwitch lang={lang} label={d.otherLangLabel} />
-              </li>
-            </ul>
-          </nav>
-          <CartLink lang={lang} label={d.cart} countLabel={d.cartCount(0)} />
-        </div>
-      </div>
-    </header>
-  );
+  return <SiteHeader lang={lang} loggedIn={loggedIn} items={items} />;
 }
 
 export function Footer({ lang, storeEmail, instagram }: { lang: Lang; storeEmail: string; instagram: string }) {
@@ -69,11 +36,12 @@ export function Footer({ lang, storeEmail, instagram }: { lang: Lang; storeEmail
   return (
     <footer className="lp-footer" id="contacto">
       <div className="lp-container">
-        <div className="lp-footer__grid lp-footer__grid--4">
-          <div>
+        <div className="lp-footer__grid">
+          <div className="lp-footer__intro">
             <Link className="lp-logo" href={path(lang)} aria-label={d.logoHome}>
-              <img src="/laupau/marca/logo-final.png" alt={d.logoAlt} width={512} height={512} loading="lazy" />
+              <img src={LOGO_SRC} alt={d.logoAlt} width={512} height={512} loading="lazy" style={{ width: 84, height: 84 }} />
             </Link>
+            <p>{d.home.eyebrow}.</p>
           </div>
           <div>
             <h2>{d.footer.contact}</h2>
@@ -86,7 +54,7 @@ export function Footer({ lang, storeEmail, instagram }: { lang: Lang; storeEmail
               </li>
               <li>
                 {d.footer.instagram}{' '}
-                <a className="lp-link" href={`https://www.instagram.com/${instagram}/`} rel="noopener">
+                <a className="lp-link" href={`https://www.instagram.com/${instagram}/`} target="_blank" rel="noopener">
                   @{instagram}
                 </a>
               </li>
@@ -118,6 +86,11 @@ export function Footer({ lang, storeEmail, instagram }: { lang: Lang; storeEmail
             </ul>
           </div>
         </div>
+        <p className="lp-footer__mark" aria-hidden="true">
+          <span>Lau</span>
+          <Amp solid />
+          <span>Pau</span>
+        </p>
         <p className="lp-footer__legal">
           <span>© {new Date().getFullYear()} Lau&amp;Pau · Andorra</span>
           <span>{d.footer.taxes}</span>

@@ -1,14 +1,15 @@
 'use client';
 
 /**
- * Comportamiento visual de la web, portado de laupau.js:
- *  - cabecera (borde al hacer scroll) y menú móvil,
- *  - pantalla de carga con la «&» (primera visita de la sesión),
- *  - transición entre páginas,
+ * Comportamiento visual de la web:
+ *  - pantalla de carga con la «&» (primera visita de la sesión) y arranque del hero,
  *  - «&» en bucle mientras carga cada fotografía,
  *  - corazones colgantes de cristal (cuerda Verlet, arrastre, inercia al scroll),
  *  - corazones de fondo en los márgenes,
- *  - brillo de los botones y aparición al hacer scroll.
+ *  - aparición escalonada al hacer scroll.
+ *
+ * La cabecera y el menú viven en site-chrome-client. La transición de página con la «&»
+ * se retiró: navegar es frecuente y no debe esperar a una animación.
  *
  * Se vuelve a montar en cada cambio de ruta y limpia sus escuchas al desmontarse.
  */
@@ -33,66 +34,26 @@ function measureAmpersands(root: ParentNode = document) {
   });
 }
 
-/* ------------------------------------------------------------- cabecera --- */
-
-function initHeader(): Cleanup {
-  const header = document.querySelector<HTMLElement>('[data-header]');
-  const toggle = document.querySelector<HTMLButtonElement>('[data-nav-toggle]');
-  const nav = document.querySelector<HTMLElement>('[data-nav]');
-  if (!header) return () => {};
-  const desktop = window.matchMedia('(min-width: 880px)');
-  const sync = () => {
-    if (!nav || !toggle) return;
-    if (desktop.matches) {
-      nav.hidden = false;
-      toggle.setAttribute('aria-expanded', 'false');
-    } else if (toggle.getAttribute('aria-expanded') !== 'true') nav.hidden = true;
-  };
-  const onToggle = () => {
-    if (!toggle || !nav) return;
-    const open = toggle.getAttribute('aria-expanded') === 'true';
-    toggle.setAttribute('aria-expanded', String(!open));
-    nav.hidden = open;
-  };
-  const onKey = (e: KeyboardEvent) => {
-    if (e.key === 'Escape' && toggle?.getAttribute('aria-expanded') === 'true') {
-      toggle.setAttribute('aria-expanded', 'false');
-      if (nav) nav.hidden = true;
-      toggle.focus();
-    }
-  };
-  if (toggle && nav) {
-    toggle.hidden = false;
-    toggle.setAttribute('aria-expanded', 'false');
-    sync();
-    desktop.addEventListener('change', sync);
-    toggle.addEventListener('click', onToggle);
-    document.addEventListener('keydown', onKey);
-  }
-  let ticking = false;
-  const onScroll = () => {
-    if (ticking) return;
-    ticking = true;
-    requestAnimationFrame(() => {
-      header.dataset.scrolled = String(window.scrollY > 8);
-      ticking = false;
-    });
-  };
-  onScroll();
-  window.addEventListener('scroll', onScroll, { passive: true });
-  return () => {
-    desktop.removeEventListener('change', sync);
-    toggle?.removeEventListener('click', onToggle);
-    document.removeEventListener('keydown', onKey);
-    window.removeEventListener('scroll', onScroll);
-  };
-}
-
 /* ---------------------------------------------------- pantalla de carga --- */
+
+/** La coreografía del hero arranca cuando la página queda a la vista. */
+function markReady() {
+  document.documentElement.classList.add('lp-ready');
+}
 
 function initLoader() {
   const loader = document.querySelector<HTMLElement>('[data-loader]');
-  if (!loader) return;
+  const seen = document.documentElement.classList.contains('lp-seen');
+  if (!loader || seen) {
+    markReady();
+    if (loader) loader.hidden = true;
+    try {
+      sessionStorage.setItem('lp-visto', '1');
+    } catch {
+      /* sin almacenamiento */
+    }
+    return;
+  }
   measureAmpersands(loader);
   try {
     sessionStorage.setItem('lp-visto', '1');
@@ -106,6 +67,8 @@ function initLoader() {
     if (done) return;
     done = true;
     loader.dataset.done = 'true';
+    // El hero empieza a entrar mientras el velo se desvanece.
+    window.setTimeout(markReady, 120);
     // Se oculta en vez de borrarse: el nodo es de React y debe seguir donde React lo dejó.
     window.setTimeout(() => (loader.hidden = true), 700);
   };
@@ -113,46 +76,6 @@ function initLoader() {
   if (document.readyState === 'complete') whenReady();
   else window.addEventListener('load', whenReady, { once: true });
   window.setTimeout(remove, 5200);
-}
-
-/* ------------------------------------------- transición entre páginas --- */
-
-function initTransitions(): Cleanup {
-  const template = document.querySelector<HTMLTemplateElement>('[data-amp-template]');
-  if (!template || reduce()) return () => {};
-  const onClick = (event: MouseEvent) => {
-    if (event.defaultPrevented || event.button !== 0) return;
-    if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
-    const link = (event.target as Element)?.closest?.('a[href]') as HTMLAnchorElement | null;
-    if (!link || link.target === '_blank' || link.hasAttribute('download') || link.dataset.noTransition !== undefined) return;
-    let url: URL;
-    try {
-      url = new URL(link.href, window.location.href);
-    } catch {
-      return;
-    }
-    if (url.origin !== window.location.origin) return;
-    if (url.pathname === window.location.pathname) return;
-    if (document.querySelector('.lp-transition')) return;
-    const overlay = document.createElement('div');
-    overlay.className = 'lp-transition';
-    overlay.setAttribute('aria-hidden', 'true');
-    overlay.appendChild(template.content.cloneNode(true));
-    document.body.appendChild(overlay);
-    measureAmpersands(overlay);
-    // Red de seguridad: si la navegación no llega, el velo se retira solo.
-    window.setTimeout(() => overlay.remove(), 4000);
-  };
-  document.addEventListener('click', onClick);
-  return () => document.removeEventListener('click', onClick);
-}
-
-function clearTransitions() {
-  document.querySelectorAll('.lp-transition').forEach((el) => {
-    (el as HTMLElement).style.transition = 'opacity 200ms';
-    (el as HTMLElement).style.opacity = '0';
-    window.setTimeout(() => el.remove(), 220);
-  });
 }
 
 /* ------------------------------------------ cargadores de fotografía --- */
@@ -592,20 +515,7 @@ function initAmbient(): Cleanup {
   };
 }
 
-/* ------------------------------------------------------ botones y scroll --- */
-
-function initButtonShine(): Cleanup {
-  if (reduce()) return () => {};
-  const onMove = (e: PointerEvent) => {
-    const btn = (e.target as Element)?.closest?.('.lp-btn') as HTMLElement | null;
-    if (!btn) return;
-    const r = btn.getBoundingClientRect();
-    btn.style.setProperty('--mx', `${((e.clientX - r.left) / r.width) * 100}%`);
-    btn.style.setProperty('--my', `${((e.clientY - r.top) / r.height) * 100}%`);
-  };
-  document.addEventListener('pointermove', onMove, { passive: true });
-  return () => document.removeEventListener('pointermove', onMove);
-}
+/* -------------------------------------------------- aparición al scroll --- */
 
 function initReveal(): Cleanup {
   const items = document.querySelectorAll<HTMLElement>('.lp-reveal:not([data-visible="true"])');
@@ -631,23 +541,16 @@ function initReveal(): Cleanup {
 export function Effects() {
   const pathname = usePathname();
 
-  // Una sola vez: pantalla de carga, brillo de botones, transiciones.
+  // Una sola vez: pantalla de carga.
   useEffect(() => {
     initLoader();
-    const a = initButtonShine();
-    const b = initTransitions();
-    return () => {
-      a();
-      b();
-    };
   }, []);
 
   // En cada página.
   useEffect(() => {
-    clearTransitions();
     measureAmpersands();
     initImageLoaders();
-    const cs = [initHeader(), initHearts(), initAmbient(), initReveal()];
+    const cs = [initHearts(), initAmbient(), initReveal()];
     return () => cs.forEach((c) => c());
   }, [pathname]);
 
