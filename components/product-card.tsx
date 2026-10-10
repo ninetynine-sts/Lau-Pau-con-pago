@@ -4,7 +4,8 @@ import { ArrowRight } from '@phosphor-icons/react/dist/ssr';
 import { Price } from './brand';
 import { loc, t } from '@/lib/i18n';
 import { path, type Lang } from '@/lib/routes';
-import { isPersonalizable, totalStock, type CatalogProduct } from '@/lib/catalog';
+import { hasColors, isPersonalizable, totalStock, type CatalogProduct } from '@/lib/catalog';
+import { ColorDots } from './color-dots';
 
 /**
  * Tarjeta de producto con doble bisel: bandeja exterior + núcleo con la foto.
@@ -44,6 +45,9 @@ export function ProductCard({ p, lang, priority = false, index = 0 }: { p: Catal
             <Link href={path(lang, 'productos', p.slug)}>{loc(p.name, lang)}</Link>
           </h3>
           <span className="lp-card__desc">{loc(p.shortDescription, lang)}</span>
+          {hasColors(p) && p.variants.length > 1 ? (
+            <ColorDots colors={p.variants.map((v) => v.color)} label={d.product.colorsCount(p.variants.length)} />
+          ) : null}
           <span className="lp-card__foot">
             {soldOut ? (
               <span className="lp-badge lp-badge--muted">{d.catalog.soldOut}</span>

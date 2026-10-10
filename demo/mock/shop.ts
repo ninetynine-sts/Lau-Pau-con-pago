@@ -19,24 +19,8 @@ import {
 
 /* ------------------------------------------------------------- catálogo --- */
 
-export type CatalogVariant = { id: number; name: Localized | null; stock: number | null; priceCents: number };
-export type CatalogProduct = {
-  id: number;
-  slug: string;
-  ref: string;
-  categoryId: string | null;
-  categoryName: Localized | null;
-  name: Localized;
-  shortDescription: Localized;
-  description: Localized;
-  badge: Localized | null;
-  priceCents: number;
-  images: ProductImage[];
-  personalization: Personalization;
-  details: { label: Localized; value: Localized }[];
-  featured: boolean;
-  variants: CatalogVariant[];
-};
+export type { CatalogVariant, CatalogProduct } from '@/lib/catalog';
+import type { CatalogProduct } from '@/lib/catalog';
 
 export const isPersonalizable = (p: { personalization: Personalization }) => p.personalization.mode !== 'none';
 
@@ -57,7 +41,7 @@ function hydrate(p: Product): CatalogProduct {
     variants: db.variants
       .filter((v) => v.productId === p.id && v.active)
       .sort((a, b) => a.sort - b.sort || a.id - b.id)
-      .map((v) => ({ id: v.id, name: v.name, stock: v.stock, priceCents: v.priceCents ?? p.priceCents }))
+      .map((v) => ({ id: v.id, name: v.name, color: v.color, stock: v.stock, priceCents: v.priceCents ?? p.priceCents }))
   };
 }
 

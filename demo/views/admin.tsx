@@ -8,6 +8,8 @@ import { COUPON_KIND_CA, ORDER_STATUS_CA, REQUEST_STATUS_CA, dateCa, eur, eurInp
 import { ADMIN, db as live, nextId, nowIso, save, useDB, type OrderStatus } from '../mock/store';
 import { mailQuote, mailRejected, mailShipped, newOrder } from '../mock/shop';
 import { navigate, useHashPath } from '../shims/router';
+import { VariantColor } from '@/components/variant-color';
+import { colorFromForm } from '@/lib/catalog';
 
 const cents = (v: string): number | null => {
   const c = v.replace(/\s|€/g, '').replace(',', '.');
@@ -669,7 +671,7 @@ function RequestDetail({ id }: { id: number }) {
         customerNotes: req.notes,
         paymentLinkExpiresAt: expires
       });
-      live.items.push({ id: nextId(), orderId: o.id, productId: req.productId, variantId: req.variantId, name: req.productName, variantName: null, image: product?.images[0]?.src ?? null, unitPriceCents: unit, quantity: req.quantity, personalization: req.personalization });
+      live.items.push({ id: nextId(), orderId: o.id, productId: req.productId, variantId: req.variantId, name: req.productName, variantName: req.variantName ?? null, image: product?.images[0]?.src ?? null, unitPriceCents: unit, quantity: req.quantity, personalization: req.personalization });
     }
     Object.assign(req, { status: 'quoted', quotedUnitCents: unit, adminMessage: message, orderId: o.id });
     mailQuote(req, o, unit, message);
@@ -932,9 +934,10 @@ function ProductEdit({ id }: { id: number }) {
       v.name = es || ca ? { es: es || ca, ca: ca || es } : null;
       const st = g(`${k}_stock`);
       v.stock = st === '' ? null : Math.max(0, Math.floor(Number(st)));
+      v.color = colorFromForm(g, String(v.id));
     }
     if (g('new_es') || g('new_ca')) {
-      live.variants.push({ id: nextId(), productId: id, name: { es: g('new_es') || g('new_ca'), ca: g('new_ca') || g('new_es') }, sku: '', stock: g('new_stock') === '' ? null : Math.max(0, Number(g('new_stock'))), priceCents: null, active: true, sort: 99 });
+      live.variants.push({ id: nextId(), productId: id, name: { es: g('new_es') || g('new_ca'), ca: g('new_ca') || g('new_es') }, color: colorFromForm(g, 'new'), sku: '', stock: g('new_stock') === '' ? null : Math.max(0, Number(g('new_stock'))), priceCents: null, active: true, sort: 99 });
     }
     save();
     setMsg({ text: 'Canvis desats. Ja es veuen a la botiga.' });
@@ -979,7 +982,7 @@ function ProductEdit({ id }: { id: number }) {
           {p.personalization.mode === 'none' ? (
             <section className="ad-card ad-form">
               <h2>Models i estoc</h2>
-              <p className="ad-muted">Cada fila és un model que la clienta pot triar (color, talla…). Estoc buit = sense control.</p>
+              <p className="ad-muted">Cada fila és un color que la clienta pot triar, amb el to que es veu a la foto. Estoc buit = sense control.</p>
               <div className="ad-variants">
                 {variants.map((v) => (
                   <div className="ad-variant" key={v.id} style={{ gridTemplateColumns: undefined }}>
@@ -999,7 +1002,7 @@ function ProductEdit({ id }: { id: number }) {
                       <label htmlFor={`v_${v.id}_stock`}>Estoc</label>
                       <input className="lp-input" id={`v_${v.id}_stock`} name={`v_${v.id}_stock`} type="number" min={0} defaultValue={v.stock ?? ''} placeholder="∞" />
                     </div>
-                    <div className="lp-field" />
+                    <VariantColor k={String(v.id)} color={v.color} />
                     <label className="lp-check ad-danger" style={{ fontSize: 13, paddingBottom: 10 }}>
                       <input type="checkbox" name={`v_${v.id}_delete`} /> Elimina
                     </label>
@@ -1022,6 +1025,7 @@ function ProductEdit({ id }: { id: number }) {
                     <label htmlFor="new_stock">Estoc</label>
                     <input className="lp-input" id="new_stock" name="new_stock" type="number" min={0} placeholder="∞" />
                   </div>
+                  <VariantColor k="new" color={null} />
                 </div>
               </div>
             </section>

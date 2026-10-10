@@ -34,7 +34,7 @@ export default async function EditProduct({ params, searchParams }: { params: Pr
       <Flash ok={ok} e={e} msg={msg} />
       <ProductForm
         product={{ ...p, badge: p.badge ?? null }}
-        variants={variants.map((v) => ({ id: v.id, name: v.name ?? null, sku: v.sku, stock: v.stock, priceCents: v.priceCents, active: v.active }))}
+        variants={variants.map((v) => ({ id: v.id, name: v.name ?? null, color: v.color ?? null, sku: v.sku, stock: v.stock, priceCents: v.priceCents, active: v.active }))}
         categories={categories}
       />
     </>

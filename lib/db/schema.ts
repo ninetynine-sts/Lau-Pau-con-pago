@@ -117,6 +117,8 @@ export const variants = pgTable('variants', {
   id: serial('id').primaryKey(),
   productId: integer('product_id').notNull().references(() => products.id, { onDelete: 'cascade' }),
   name: jsonb('name').$type<Localized | null>(),
+  /** Color de la muestra: «#rrggbb» o dos colores «#rrggbb,#rrggbb» (estampados, combinados). */
+  color: text('color'),
   sku: text('sku').notNull().default(''),
   stock: integer('stock'), // null = sin control de existencias
   priceCents: integer('price_cents'), // null = precio del producto
@@ -248,6 +250,8 @@ export const requests = pgTable('requests', {
   productId: integer('product_id').references(() => products.id, { onDelete: 'set null' }),
   productName: jsonb('product_name').$type<Localized>().notNull(),
   variantId: integer('variant_id').references(() => variants.id, { onDelete: 'set null' }),
+  /** Color elegido, copiado al pedir: sigue visible aunque luego se borre la variante. */
+  variantName: jsonb('variant_name').$type<Localized | null>(),
   quantity: integer('quantity').notNull().default(1),
   personalization: jsonb('personalization').$type<ItemPersonalization>(),
   notes: text('notes'),

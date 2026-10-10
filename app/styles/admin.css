@@ -93,3 +93,9 @@ a.ad-stat:hover { border-color: var(--separator-strong); box-shadow: var(--shado
 .ad-filter a { padding: 8px 14px; border-radius: 999px; background: var(--fill); color: var(--label-2); font-weight: 700; font-size: 13px; text-decoration: none; }
 .ad-filter a[aria-current='true'] { background: var(--primary); color: var(--on-primary); }
 .ad-pre { white-space: pre-wrap; font-size: 14px; color: var(--label-2); }
+
+/* Color de la variant al tauler */
+.ad-color { grid-column: 1 / -1; }
+.ad-color__label { font-size: 12px; font-weight: 700; color: var(--label-2); }
+.ad-color__row { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+.ad-color__input { width: 44px; height: 36px; padding: 2px; border: 1px solid var(--separator-strong); border-radius: 10px; background: #fff; cursor: pointer; }

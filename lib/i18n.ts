@@ -98,6 +98,9 @@ const es = {
     soldOut: 'Agotado'
   },
   product: {
+    color: 'Color',
+    colorsCount: (n: number) => (n === 1 ? '1 color' : `${n} colores`),
+    colorRequired: 'Elige un color.',
     home: 'Inicio',
     products: 'Productos',
     category: 'Categoría',
@@ -429,6 +432,9 @@ const ca: Dict = {
     soldOut: 'Esgotat'
   },
   product: {
+    color: 'Color',
+    colorsCount: (n: number) => (n === 1 ? '1 color' : `${n} colors`),
+    colorRequired: 'Tria un color.',
     home: 'Inici',
     products: 'Productes',
     category: 'Categoria',

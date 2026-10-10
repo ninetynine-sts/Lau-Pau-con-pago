@@ -53,6 +53,14 @@ export default async function RequestDetail({ params, searchParams }: { params: 
                 <dd>
                   <b>{r.quantity}</b>
                 </dd>
+                {r.variantName ? (
+                  <>
+                    <dt>Color</dt>
+                    <dd>
+                      <b>{loc(r.variantName, 'ca')}</b>
+                    </dd>
+                  </>
+                ) : null}
                 {r.personalization?.letter ? (
                   <>
                     <dt>Lletra</dt>

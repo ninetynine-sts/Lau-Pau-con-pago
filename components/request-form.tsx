@@ -3,6 +3,7 @@
 import { useActionState, useEffect, useRef, useState } from 'react';
 import { Amp, Sheen } from './brand';
 import { submitRequest, type RequestState } from '@/app/actions/shop';
+import { ColorPicker, type ColorOption } from './color-picker';
 
 export type RequestLabels = {
   title: string;
@@ -29,9 +30,12 @@ export function RequestForm({
   maxLength = 300,
   lang,
   labels,
-  defaults
+  defaults,
+  colors
 }: {
   productId: number;
+  /** Colores del producto (de sus fotos). Con uno solo, se muestra ya elegido. */
+  colors?: { options: ColorOption[]; label: string; soldOutLabel: string };
   mode: 'letter' | 'idea';
   maxLength?: number;
   lang: 'es' | 'ca';
@@ -40,6 +44,8 @@ export function RequestForm({
 }) {
   const [state, action, pending] = useActionState<RequestState, FormData>(submitRequest, { ok: false, errors: {} });
   const [qty, setQty] = useState(1);
+  const firstColor = colors?.options.find((o) => !o.soldOut)?.id;
+  const [variantId, setVariantId] = useState<number | undefined>(firstColor);
   const [idea, setIdea] = useState('');
   const [notes, setNotes] = useState('');
   const [dismissed, setDismissed] = useState<RequestState | null>(null);
@@ -83,6 +89,23 @@ export function RequestForm({
           Web <input type="text" name="website" tabIndex={-1} autoComplete="off" />
         </label>
       </div>
+
+      {colors && colors.options.length ? (
+        <div>
+          <ColorPicker
+            id={`rc-${productId}`}
+            name="variantId"
+            options={colors.options}
+            value={variantId}
+            onChange={setVariantId}
+            label={colors.label}
+            soldOutLabel={colors.soldOutLabel}
+          />
+          <span className="lp-error" role="alert">
+            {e.variant ?? ''}
+          </span>
+        </div>
+      ) : null}
 
       <div className="lp-field">
         <label htmlFor="r-qty">{labels.quantity}</label>

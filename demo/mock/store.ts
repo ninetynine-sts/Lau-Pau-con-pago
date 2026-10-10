@@ -24,7 +24,7 @@ export type Product = {
   featured: boolean;
   sort: number;
 };
-export type Variant = { id: number; productId: number; name: Localized | null; sku: string; stock: number | null; priceCents: number | null; active: boolean; sort: number };
+export type Variant = { id: number; productId: number; name: Localized | null; color: string | null; sku: string; stock: number | null; priceCents: number | null; active: boolean; sort: number };
 export type Shipping = {
   id: number;
   name: Localized;
@@ -105,6 +105,7 @@ export type Req = {
   productId: number | null;
   productName: Localized;
   variantId: number | null;
+  variantName: Localized | null;
   quantity: number;
   personalization: ItemPersonalization;
   notes: string | null;
@@ -136,7 +137,7 @@ export type DB = {
   seq: number;
 };
 
-const KEY = 'lp-demo-v1';
+const KEY = 'lp-demo-v2'; // v2: colores por producto (los datos guardados de v1 no los tienen)
 export const ADMIN = { email: 'admin@laupau.ad', password: 'demo-laupau' };
 export const CUSTOMER = { email: 'maria@exemple.ad', password: 'demo-maria' };
 
@@ -195,11 +196,17 @@ function fresh(): DB {
       featured: !!p.featured,
       sort: p.sort
     });
-    db.variants.push({ id: id(), productId: pid, name: null, sku: p.ref, stock: null, priceCents: null, active: true, sort: 1 });
+    const vs: { name: Localized | null; color: string | null }[] = p.variants ?? [{ name: null, color: null }];
+    vs.forEach((v, i) =>
+      db.variants.push({ id: id(), productId: pid, name: v.name, color: v.color ?? null, sku: `${p.ref}-${i + 1}`, stock: null, priceCents: null, active: true, sort: i + 1 })
+    );
   }
   // Ejemplo de existencias para ver el aviso de «quedan pocas».
   const bolso = db.products.find((p) => p.slug === 'bolso-cierre-hueso')!;
-  db.variants.find((v) => v.productId === bolso.id)!.stock = 3;
+  // y un color agotado, para ver la muestra tachada.
+  const bolsoVs = db.variants.filter((v) => v.productId === bolso.id);
+  bolsoVs[0].stock = 3;
+  bolsoVs[3].stock = 0;
 
   for (const s of seed.shippingMethods as any[]) db.shipping.push({ id: id(), ...s, active: true });
   db.coupons.push({ id: id(), code: 'BENVINGUDA', kind: 'percent', value: 10, minSubtotalCents: 0, startsAt: null, expiresAt: null, maxUses: null, usedCount: 1, active: true, createdAt: now() });
@@ -245,8 +252,8 @@ function fresh(): DB {
   db.orders.push(o1);
   const im = (p: Product) => p.images[0]?.src ?? null;
   db.items.push(
-    { id: id(), orderId: o1.id, productId: calcetines.id, variantId: db.variants.find((v) => v.productId === calcetines.id)!.id, name: calcetines.name, variantName: null, image: im(calcetines), unitPriceCents: 499, quantity: 2, personalization: null },
-    { id: id(), orderId: o1.id, productId: panuelos.id, variantId: db.variants.find((v) => v.productId === panuelos.id)!.id, name: panuelos.name, variantName: null, image: im(panuelos), unitPriceCents: 799, quantity: 1, personalization: null }
+    { id: id(), orderId: o1.id, productId: calcetines.id, variantId: db.variants.filter((v) => v.productId === calcetines.id)[1].id, name: calcetines.name, variantName: db.variants.filter((v) => v.productId === calcetines.id)[1].name, image: im(calcetines), unitPriceCents: 499, quantity: 2, personalization: null },
+    { id: id(), orderId: o1.id, productId: panuelos.id, variantId: db.variants.filter((v) => v.productId === panuelos.id)[3].id, name: panuelos.name, variantName: db.variants.filter((v) => v.productId === panuelos.id)[3].name, image: im(panuelos), unitPriceCents: 799, quantity: 1, personalization: null }
   );
   db.payments.push({ id: id(), orderId: o1.id, dsOrder: '4821K7Q2MZ0A', amountCents: o1.totalCents, status: 'authorized', responseCode: '0000', authCode: '123456', updatedAt: daysAgo(1) });
 
@@ -264,6 +271,7 @@ function fresh(): DB {
     productId: manta.id,
     productName: manta.name,
     variantId: db.variants.find((v) => v.productId === manta.id)!.id,
+    variantName: db.variants.find((v) => v.productId === manta.id)!.name,
     quantity: 1,
     personalization: { idea: 'El nombre «Martina» bordado en una esquina, en color tostado.' },
     notes: 'Es para un regalo de nacimiento.',

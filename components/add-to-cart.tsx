@@ -4,11 +4,14 @@ import { useMemo, useState } from 'react';
 import { Minus, Plus } from '@phosphor-icons/react/dist/ssr';
 import { BtnIcon } from './brand';
 import { useCart } from './cart';
+import { ColorPicker } from './color-picker';
+import { swatchColors } from '@/lib/catalog';
 
-export type BuyVariant = { id: number; name: string | null; stock: number | null };
+export type BuyVariant = { id: number; name: string | null; color?: string | null; stock: number | null };
 
 export type BuyLabels = {
   variant: string;
+  color?: string;
   chooseVariant: string;
   quantity: string;
   less: string;
@@ -37,6 +40,13 @@ export function AddToCart({ variants, labels }: { variants: BuyVariant[]; labels
   const max = v?.stock === null || v?.stock === undefined ? 99 : Math.max(0, v.stock - inCart);
   const soldOut = !v || (v.stock !== null && v.stock <= 0);
   const named = variants.length > 1 || variants.some((x) => x.name);
+  // Si las variantes son colores (con muestra), se eligen con muestras en vez de un desplegable.
+  const byColor = variants.some((x) => swatchColors(x.color).length > 0);
+  const choose = (id: number) => {
+    setVariantId(id);
+    setStatus('idle');
+    setError('');
+  };
 
   const stockText = useMemo(() => {
     if (!v) return null;
@@ -61,7 +71,21 @@ export function AddToCart({ variants, labels }: { variants: BuyVariant[]; labels
 
   return (
     <div className="lp-buy">
-      {named ? (
+      {byColor ? (
+        <ColorPicker
+          id="color"
+          options={variants.map((x) => ({
+            id: x.id,
+            label: x.name ?? labels.chooseVariant,
+            color: x.color ?? null,
+            soldOut: x.stock !== null && x.stock <= 0
+          }))}
+          value={variantId}
+          onChange={choose}
+          label={labels.color ?? labels.variant}
+          soldOutLabel={labels.soldOut}
+        />
+      ) : named ? (
         <div className="lp-field">
           <label htmlFor="variante">{labels.variant}</label>
           <select

@@ -45,7 +45,7 @@ async function hydrate(rows: (typeof schema.products.$inferSelect)[]): Promise<C
     featured: p.featured,
     variants: vs
       .filter((v) => v.productId === p.id)
-      .map((v) => ({ id: v.id, name: v.name ?? null, stock: v.stock, priceCents: v.priceCents ?? p.priceCents }))
+      .map((v) => ({ id: v.id, name: v.name ?? null, color: v.color ?? null, stock: v.stock, priceCents: v.priceCents ?? p.priceCents }))
   }));
 }
 

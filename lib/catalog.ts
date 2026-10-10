@@ -7,6 +7,8 @@ import type { Localized, Personalization, ProductImage } from './db/schema';
 export type CatalogVariant = {
   id: number;
   name: Localized | null;
+  /** «#rrggbb» o «#rrggbb,#rrggbb»; null si la variante no es un color. */
+  color: string | null;
   stock: number | null;
   priceCents: number;
 };
@@ -47,4 +49,30 @@ export function totalStock(p: CatalogProduct): number | null {
 
 export function isSoldOut(p: CatalogProduct): boolean {
   return !isPersonalizable(p) && (p.variants.length === 0 || totalStock(p) === 0);
+}
+
+/** Colores válidos de una muestra (uno o dos «#rrggbb»). Cualquier otra cosa → []. */
+export function swatchColors(color: string | null | undefined): string[] {
+  if (!color) return [];
+  const parts = color.split(',').map((c) => c.trim());
+  return parts.length <= 2 && parts.every((c) => /^#[0-9a-f]{6}$/i.test(c)) ? parts : [];
+}
+
+/** ¿El producto se elige por color? (alguna variante activa lleva muestra). */
+export function hasColors(p: { variants: { color: string | null }[] }): boolean {
+  return p.variants.some((v) => swatchColors(v.color).length > 0);
+}
+
+/**
+ * Llegeix el color d'una variant del formulari del tauler (camps v_<k>_hascolor, _c1, _two, _c2).
+ * Només accepta #rrggbb; qualsevol altra cosa queda sense color.
+ */
+export function colorFromForm(get: (name: string) => string, k: string): string | null {
+  const hex = (name: string) => {
+    const v = get(name).trim().toLowerCase();
+    return /^#[0-9a-f]{6}$/.test(v) ? v : null;
+  };
+  const c1 = get(`v_${k}_hascolor`) === 'on' ? hex(`v_${k}_c1`) : null;
+  const c2 = c1 && get(`v_${k}_two`) === 'on' ? hex(`v_${k}_c2`) : null;
+  return c1 ? (c2 ? `${c1},${c2}` : c1) : null;
 }

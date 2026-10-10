@@ -81,12 +81,15 @@ export async function submitRequest(_prev: RequestState, form: FormData): Promis
   if (!isEmail(email)) errors.email = d.checkout.errors.email;
   const phone = str(form.get('phone'), 40) || null;
 
-  // Variante: los personalizables suelen tener una sola.
-  const [variant] = await db
+  // Color (variante): debe ser uno de los activos de ESTE producto. Si solo hay uno, ese.
+  const active = await db
     .select()
     .from(schema.variants)
-    .where(and(eq(schema.variants.productId, product.id), eq(schema.variants.active, true)))
-    .limit(1);
+    .where(and(eq(schema.variants.productId, product.id), eq(schema.variants.active, true)));
+  const askedVariant = Number(form.get('variantId'));
+  const variant =
+    active.find((v) => v.id === askedVariant) ?? (active.length === 1 ? active[0] : undefined);
+  if (active.length > 1 && !variant) errors.variant = d.product.colorRequired;
 
   if (Object.keys(errors).length) return { ok: false, errors };
   // Cada solicitud envía un correo a la dirección indicada: máx. 3 por dirección cada hora,
@@ -109,6 +112,7 @@ export async function submitRequest(_prev: RequestState, form: FormData): Promis
       productId: product.id,
       productName: product.name,
       variantId: variant?.id ?? null,
+      variantName: variant?.name ?? null,
       quantity,
       personalization,
       notes: notes || null

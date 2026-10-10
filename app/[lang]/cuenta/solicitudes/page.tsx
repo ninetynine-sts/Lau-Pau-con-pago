@@ -39,6 +39,7 @@ export default async function Requests({ params }: { params: Promise<{ lang: str
               <tr key={r.id}>
                 <td>
                   <b>{loc(r.productName, lang)}</b> × {r.quantity}
+                  {r.variantName ? <span className="lp-line__meta" style={{ display: 'block' }}>{loc(r.variantName, lang)}</span> : null}
                   <span className="lp-line__meta" style={{ display: 'block' }}>
                     {r.personalization?.letter ? `${d.order.letter}: ${r.personalization.letter}` : r.personalization?.idea ?? ''}
                   </span>

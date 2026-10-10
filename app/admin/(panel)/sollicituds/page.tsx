@@ -54,7 +54,9 @@ export default async function Requests({ searchParams }: { searchParams: Promise
                   <tr key={r.id}>
                     <td>
                       <Link href={`/admin/sollicituds/${r.id}`}>{loc(r.productName, 'ca')}</Link>
-                      <div className="ad-muted">{r.quantity} u.</div>
+                      <div className="ad-muted">
+                        {r.quantity} u.{r.variantName ? ` · ${loc(r.variantName, 'ca')}` : ''}
+                      </div>
                     </td>
                     <td style={{ maxWidth: 280 }}>
                       {r.personalization?.letter ? (

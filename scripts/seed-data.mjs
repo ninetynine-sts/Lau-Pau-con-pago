@@ -31,6 +31,9 @@ export const products = [
       ca: "Charm d'estrella amb una lletra personalitzada. Digues-nos quina inicial t'agradaria: revisem la teva sol·licitud i t'enviem el preu final i l'enllaç de pagament."
     },
     badge: { es: 'Con tu letra', ca: 'Amb la teva lletra' },
+    variants: [
+      { name: { es: 'Marrón y camel', ca: 'Marró i camell' }, color: '#5A3324,#A8612B' }
+    ],
     images: [img('charm-estrella-personalizado.webp',
       'Charm con estrella marrón, cordones y una letra P naranja como ejemplo de personalización.',
       'Charm amb estrella marró, cordons i una lletra P taronja com a exemple de personalització.', 1145, 1374)],
@@ -52,9 +55,17 @@ export const products = [
     name: { es: 'Calcetines glitter', ca: 'Mitjons glitter' },
     shortDescription: { es: 'Un toque de brillo para tus días de siempre.', ca: 'Un toc de brillantor per als teus dies de sempre.' },
     description: {
-      es: 'Calcetines glitter para sumar un detalle diferente a tu look. Si prefieres un color o un mensaje concreto, indícalo en las notas del pedido.',
-      ca: 'Mitjons glitter per afegir un detall diferent al teu look. Si prefereixes un color o un missatge concret, indica-ho a les notes de la comanda.'
+      es: 'Calcetines glitter para sumar un detalle diferente a tu look.',
+      ca: 'Mitjons glitter per afegir un detall diferent al teu look.'
     },
+    variants: [
+      { name: { es: 'Crudo · «Indécise»', ca: 'Cru · «Indécise»' }, color: '#EFE8DA' },
+      { name: { es: 'Camel · «Princesse»', ca: 'Camell · «Princesse»' }, color: '#8C6B47' },
+      { name: { es: 'Azul · «Édition limitée»', ca: 'Blau · «Édition limitée»' }, color: '#2F4F94' },
+      { name: { es: 'Granate · «Sexy»', ca: 'Granat · «Sexy»' }, color: '#8B1A26' },
+      { name: { es: "Lavanda · «Tata d'amour»", ca: "Lavanda · «Tata d'amour»" }, color: '#C8BAC3' },
+      { name: { es: 'Rosa · «La miss»', ca: 'Rosa · «La miss»' }, color: '#E58C93' }
+    ],
     images: [img('calcetines-glitter.webp',
       'Calcetines glitter en seis colores y con distintos mensajes.',
       'Mitjons glitter en sis colors i amb missatges diferents.', 1224, 1285)]
@@ -68,9 +79,19 @@ export const products = [
     name: { es: 'Pañuelos', ca: 'Mocadors' },
     shortDescription: { es: 'Un nudo y otra forma de ver tu look.', ca: 'Un nus i una altra manera de veure el teu look.' },
     description: {
-      es: 'Pañuelos con diferentes estampados para dar otro aire a tu conjunto. Si tienes un estampado favorito, indícalo en las notas del pedido.',
-      ca: "Mocadors amb estampats diferents per donar un altre aire al teu conjunt. Si tens un estampat preferit, indica-ho a les notes de la comanda."
+      es: 'Pañuelos con diferentes estampados para dar otro aire a tu conjunto.',
+      ca: "Mocadors amb estampats diferents per donar un altre aire al teu conjunt."
     },
+    variants: [
+      { name: { es: 'Granate con rosas', ca: 'Granat amb roses' }, color: '#7C1521,#F1ECE6' },
+      { name: { es: 'Teja con topitos', ca: 'Teula amb topets' }, color: '#8E2A1D,#D9C3A8' },
+      { name: { es: 'Granate con flores rosas', ca: 'Granat amb flors roses' }, color: '#9C1C2C,#F1C3C8' },
+      { name: { es: 'Blanco con lunares negros', ca: 'Blanc amb pics negres' }, color: '#F7F4EE,#151313' },
+      { name: { es: 'Negro con lunares blancos', ca: 'Negre amb pics blancs' }, color: '#151313,#F7F4EE' },
+      { name: { es: 'Blanco con tigre', ca: 'Blanc amb tigre' }, color: '#F6F1EA,#E9A27C' },
+      { name: { es: 'Negro cachemir', ca: 'Negre caixmir' }, color: '#1A1514,#8A6A4F' },
+      { name: { es: 'Marrón con lunares', ca: 'Marró amb pics' }, color: '#6A2D1E,#F5EFE6' }
+    ],
     images: [img('panuelos.webp',
       'Selección de ocho pañuelos con estampados florales, geométricos y de lunares.',
       'Selecció de vuit mocadors amb estampats florals, geomètrics i de pics.', 1295, 1214)]
@@ -84,9 +105,16 @@ export const products = [
     name: { es: 'Bolso con cierre hueso', ca: "Bossa amb tancament d'os" },
     shortDescription: { es: 'El cierre que da personalidad al conjunto.', ca: 'El tancament que dona personalitat al conjunt.' },
     description: {
-      es: 'Un bolso con un cierre protagonista para acompañar tus looks. Si buscas un color concreto, indícalo en las notas del pedido.',
-      ca: 'Una bossa amb un tancament protagonista per acompanyar els teus looks. Si busques un color concret, indica-ho a les notes de la comanda.'
+      es: 'Un bolso con un cierre protagonista para acompañar tus looks.',
+      ca: 'Una bossa amb un tancament protagonista per acompanyar els teus looks.'
     },
+    variants: [
+      { name: { es: 'Cuero', ca: 'Cuir' }, color: '#B4602B' },
+      { name: { es: 'Negro', ca: 'Negre' }, color: '#1F1C1B' },
+      { name: { es: 'Marrón topo', ca: 'Marró talp' }, color: '#5F4C3D' },
+      { name: { es: 'Mostaza', ca: 'Mostassa' }, color: '#E1AE30' },
+      { name: { es: 'Granate', ca: 'Granat' }, color: '#8B2027' }
+    ],
     images: [img('bolso-cierre-hueso.webp',
       'Bolso con cierre hueso mostrado en cinco colores.',
       "Bossa amb tancament d'os mostrada en cinc colors.", 1536, 1024)]
@@ -103,6 +131,11 @@ export const products = [
       es: 'Cordón para llevar el móvil contigo. Comprueba la compatibilidad con tu funda antes de realizar el pedido.',
       ca: 'Cordó per portar el mòbil amb tu. Comprova la compatibilitat amb la teva funda abans de fer la comanda.'
     },
+    variants: [
+      { name: { es: 'Azul y lila', ca: 'Blau i lila' }, color: '#7DB4E6,#7B4FD0' },
+      { name: { es: 'Rosa y gris', ca: 'Rosa i gris' }, color: '#F2A29E,#5C5C60' },
+      { name: { es: 'Azul y amarillo', ca: 'Blau i groc' }, color: '#5DB7E6,#E3E85A' }
+    ],
     images: [img('cordon-para-movil.webp',
       'Tres cordones para móvil en sus embalajes originales, con distintas combinaciones de color.',
       'Tres cordons per al mòbil en els seus embalatges originals, amb diferents combinacions de color.', 1536, 1024)]
@@ -121,6 +154,9 @@ export const products = [
     },
     badge: { es: 'A tu idea', ca: 'A la teva idea' },
     details: [{ label: { es: 'Medidas', ca: 'Mides' }, value: { es: '130 × 170 cm', ca: '130 × 170 cm' } }],
+    variants: [
+      { name: { es: 'Beige', ca: 'Beix' }, color: '#DCCAB5' }
+    ],
     images: [img('manta-polar-personalizable.webp',
       'Manta polar beige doblada, con el nombre PAULA en la fotografía de referencia.',
       'Manta polar beix plegada, amb el nom PAULA a la fotografia de referència.', 1391, 1131)],

@@ -52,9 +52,12 @@ export async function submitRequest(_prev: RequestState, form: FormData): Promis
   if (!name) errors.name = d.checkout.errors.required;
   const email = str(form.get('email'), 254).toLowerCase();
   if (!isEmail(email)) errors.email = d.checkout.errors.email;
+  const active = db.variants.filter((v) => v.productId === product.id && v.active);
+  const asked = Number(form.get('variantId'));
+  const variant = active.find((v) => v.id === asked) ?? (active.length === 1 ? active[0] : undefined);
+  if (active.length > 1 && !variant) errors.variant = d.product.colorRequired;
   if (Object.keys(errors).length) return { ok: false, errors };
 
-  const variant = db.variants.find((v) => v.productId === product.id && v.active);
   const r = {
     id: nextId(),
     publicId: token(),
@@ -67,6 +70,7 @@ export async function submitRequest(_prev: RequestState, form: FormData): Promis
     productId: product.id,
     productName: product.name,
     variantId: variant?.id ?? null,
+    variantName: variant?.name ?? null,
     quantity,
     personalization,
     notes: notes || null,

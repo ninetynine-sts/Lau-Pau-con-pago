@@ -30,6 +30,7 @@ import { getSettings, saveSettings } from '@/lib/settings';
 import { saveImage } from '@/lib/storage';
 import { ORDER_STATUSES, type Localized, type OrderStatus, type Personalization, type ProductImage } from '@/lib/db/schema';
 import type { Lang } from '@/lib/routes';
+import { colorFromForm } from '@/lib/catalog';
 
 const s = (f: FormData, k: string, max = 500) => String(f.get(k) ?? '').trim().slice(0, max);
 const L = (f: FormData, k: string, max = 2000): Localized => ({ es: s(f, `${k}_es`, max), ca: s(f, `${k}_ca`, max) });
@@ -166,7 +167,7 @@ export async function quoteRequest(form: FormData) {
         productId: r.productId,
         variantId: r.variantId,
         name: r.productName,
-        variantName: null,
+        variantName: r.variantName ?? null,
         image: product?.images[0]?.src ?? null,
         unitPriceCents: unit,
         quantity: r.quantity,
@@ -315,11 +316,13 @@ export async function saveProduct(form: FormData) {
     const stock = intOrNull(s(form, `v_${key}_stock`, 6));
     const vPrice = cents(s(form, `v_${key}_price`, 20));
     const remove = form.get(`v_${key}_delete`) === 'on';
+    const color = colorFromForm((n) => String(form.get(n) ?? ''), key);
     const isNew = key.startsWith('new');
     if (isNew && !vName.es && !vName.ca && stock === null) continue; // fila buida
     sort += 1;
     const row = {
       name: vName.es || vName.ca ? { es: vName.es || vName.ca, ca: vName.ca || vName.es } : null,
+      color,
       sku: s(form, `v_${key}_sku`, 60),
       stock: stock === null ? null : Math.max(0, stock),
       priceCents: vPrice,

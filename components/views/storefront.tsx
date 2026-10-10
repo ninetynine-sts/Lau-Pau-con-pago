@@ -10,7 +10,7 @@ import { ProductCard } from '@/components/product-card';
 import { CatalogFilters } from '@/components/catalog-filters';
 import { AddToCart } from '@/components/add-to-cart';
 import { RequestForm } from '@/components/request-form';
-import { isPersonalizable, type CatalogProduct, type Category } from '@/lib/catalog';
+import { hasColors, isPersonalizable, type CatalogProduct, type Category } from '@/lib/catalog';
 import { loc, t } from '@/lib/i18n';
 import { path, type Lang } from '@/lib/routes';
 
@@ -136,6 +136,21 @@ function Request({ p, lang, defaults }: { p: CatalogProduct; lang: Lang; default
       lang={lang}
       defaults={defaults}
       labels={requestLabels(lang, p)}
+      colors={
+        hasColors(p)
+          ? {
+              options: p.variants.map((v) => ({
+                id: v.id,
+                label: v.name ? loc(v.name, lang) : '',
+                color: v.color,
+                // En una pieza que se fabrica por encargo, el estoc no aplica.
+                soldOut: false
+              })),
+              label: t(lang).product.color,
+              soldOutLabel: t(lang).product.soldOut
+            }
+          : undefined
+      }
     />
   );
 }
@@ -420,9 +435,10 @@ export function ProductView({ lang, p, defaults }: { lang: Lang; p: CatalogProdu
                   </div>
                 ) : (
                   <AddToCart
-                    variants={p.variants.map((v) => ({ id: v.id, name: v.name ? loc(v.name, lang) : null, stock: v.stock }))}
+                    variants={p.variants.map((v) => ({ id: v.id, name: v.name ? loc(v.name, lang) : null, color: v.color, stock: v.stock }))}
                     labels={{
                       variant: d.product.variant,
+                      color: d.product.color,
                       chooseVariant: d.product.chooseVariant,
                       quantity: d.product.quantity,
                       less: d.product.less,

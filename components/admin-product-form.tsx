@@ -1,5 +1,6 @@
 import { saveProduct, deleteProduct } from '@/app/actions/admin';
 import { eurInput } from '@/lib/admin-labels';
+import { VariantColor } from './variant-color';
 import type { Localized, Personalization, ProductImage } from '@/lib/db/schema';
 
 type Product = {
@@ -18,7 +19,7 @@ type Product = {
   featured: boolean;
   sort: number;
 };
-type Variant = { id: number; name: Localized | null; sku: string; stock: number | null; priceCents: number | null; active: boolean };
+type Variant = { id: number; name: Localized | null; color: string | null; sku: string; stock: number | null; priceCents: number | null; active: boolean };
 
 function Bi({ name, label, value, area = false, max }: { name: string; label: string; value?: Localized | null; area?: boolean; max?: number }) {
   const Tag = area ? 'textarea' : 'input';
@@ -40,10 +41,10 @@ function Bi({ name, label, value, area = false, max }: { name: string; label: st
 export function ProductForm({ product, variants, categories }: { product: Product | null; variants: Variant[]; categories: { id: string; name: Localized }[] }) {
   const p = product;
   const pz = p?.personalization ?? { mode: 'none' as const };
-  const rows: (Variant | { id: string; name: null; sku: string; stock: null; priceCents: null; active: boolean })[] = [
+  const rows: (Variant | { id: string; name: null; color: null; sku: string; stock: null; priceCents: null; active: boolean })[] = [
     ...variants,
-    { id: 'new1', name: null, sku: '', stock: null, priceCents: null, active: true },
-    { id: 'new2', name: null, sku: '', stock: null, priceCents: null, active: true }
+    { id: 'new1', name: null, color: null, sku: '', stock: null, priceCents: null, active: true },
+    { id: 'new2', name: null, color: null, sku: '', stock: null, priceCents: null, active: true }
   ];
   return (
     <>
@@ -62,8 +63,9 @@ export function ProductForm({ product, variants, categories }: { product: Produc
             <section className="ad-card ad-form">
               <h2>Models i estoc</h2>
               <p className="ad-muted">
-                Cada fila és un model que la clienta pot triar (color, talla…). Deixa l’estoc buit si no vols controlar-lo. Si el producte no té models, deixa una sola fila sense nom.
-                Les files buides de baix serveixen per afegir-ne.
+                Cada fila és un color (o model) que la clienta pot triar. Posa-hi el nom i, a «Color», el to que es veu a la foto: a la web es mostra com
+                una mostra rodona. Per a estampats o combinats, marca «Dos colors». Deixa l’estoc buit si no vols controlar-lo. Les files buides de baix
+                serveixen per afegir-ne.
               </p>
               <div className="ad-variants">
                 {rows.map((v) => {
@@ -83,6 +85,7 @@ export function ProductForm({ product, variants, categories }: { product: Produc
                         </label>
                         <input className="lp-input" id={`v_${k}_name_ca`} name={`v_${k}_name_ca`} defaultValue={v.name?.ca ?? ''} />
                       </div>
+                      <VariantColor k={k} color={v.color} />
                       <div className="lp-field">
                         <label htmlFor={`v_${k}_stock`}>Estoc</label>
                         <input className="lp-input" id={`v_${k}_stock`} name={`v_${k}_stock`} type="number" min={0} defaultValue={v.stock ?? ''} placeholder="∞" />

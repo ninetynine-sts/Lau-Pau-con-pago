@@ -292,3 +292,60 @@ fieldset.lp-panel > legend + * { clear: both; }
 @media (prefers-reduced-transparency: reduce) {
   .lp-drawer__panel { background: var(--surface); -webkit-backdrop-filter: none; backdrop-filter: none; }
 }
+
+/* --------------------------------------------------- selector de color --- */
+/* Una muestra por color de la foto. La elegida lleva un anillo separado del color
+   (aire + línea), así se distingue también en colores oscuros o muy claros. */
+
+.lp-colors { gap: 12px; }
+.lp-colors__head { display: flex; align-items: baseline; gap: 10px; margin: 0; flex-wrap: wrap; }
+.lp-colors__label {
+  font-size: 11px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: var(--label-3);
+}
+.lp-colors__name { font-weight: 700; font-size: 14.5px; color: var(--label-1); min-height: 1.3em; }
+.lp-colors__list { display: flex; flex-wrap: wrap; gap: 10px; padding: 2px; }
+
+.lp-swatch {
+  position: relative; width: 44px; height: 44px; padding: 0; border: 0; border-radius: 50%;
+  background: transparent; cursor: pointer; display: grid; place-items: center;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform var(--t-press) var(--ease-out);
+}
+.lp-swatch__dot {
+  width: 34px; height: 34px; border-radius: 50%;
+  background: var(--swatch);
+  box-shadow: inset 0 0 0 1px rgba(25, 13, 8, .14), inset 0 1px 1px rgba(255, 255, 255, .35);
+  transition: transform 260ms var(--ease-out);
+}
+.lp-swatch::after {
+  content: ''; position: absolute; inset: 0; border-radius: 50%;
+  box-shadow: 0 0 0 1.5px var(--label-1);
+  opacity: 0; transform: scale(.86);
+  transition: opacity 200ms var(--ease-out), transform 260ms var(--ease-out);
+}
+.lp-swatch[aria-checked='true']::after { opacity: 1; transform: scale(1); }
+.lp-swatch:active { transform: scale(.92); }
+.lp-swatch:focus-visible { outline: none; }
+.lp-swatch:focus-visible::after { opacity: 1; transform: scale(1); box-shadow: 0 0 0 2px var(--accent); }
+@media (hover: hover) and (pointer: fine) {
+  .lp-swatch:not([data-soldout]):hover .lp-swatch__dot { transform: scale(1.08); }
+}
+/* Agotado: atenuado y tachado en diagonal. */
+.lp-swatch[data-soldout] { cursor: not-allowed; }
+.lp-swatch[data-soldout] .lp-swatch__dot { opacity: .45; }
+.lp-swatch[data-soldout]::before {
+  content: ''; position: absolute; left: 50%; top: 50%; width: 38px; height: 1.5px; z-index: 1;
+  background: var(--label-2); transform: translate(-50%, -50%) rotate(-45deg); border-radius: 2px;
+}
+
+/* Puntos de color en las tarjetas. */
+.lp-dots { display: inline-flex; align-items: center; gap: 4px; margin-top: 2px; }
+.lp-dots__dot {
+  width: 12px; height: 12px; border-radius: 50%;
+  box-shadow: inset 0 0 0 1px rgba(25, 13, 8, .16);
+}
+.lp-dots__more { font-size: 11.5px; font-weight: 700; color: var(--label-3); margin-left: 2px; font-variant-numeric: tabular-nums; }
+
+@media (prefers-reduced-motion: reduce) {
+  .lp-swatch, .lp-swatch__dot, .lp-swatch::after { transition: none; }
+}

@@ -73,8 +73,8 @@ async function seedIfEmpty(q) {
     let i = 0;
     for (const v of vs) {
       i += 1;
-      await q('insert into variants (product_id, name, sku, stock, sort) values ($1,$2,$3,$4,$5)', [
-        row.id, v.name ? j(v.name) : null, `${p.ref}${vs.length > 1 ? `-${i}` : ''}`, v.stock ?? null, i
+      await q('insert into variants (product_id, name, color, sku, stock, sort) values ($1,$2,$3,$4,$5,$6)', [
+        row.id, v.name ? j(v.name) : null, v.color ?? null, `${p.ref}${vs.length > 1 ? `-${i}` : ''}`, v.stock ?? null, i
       ]);
     }
   }
@@ -91,6 +91,36 @@ async function seedIfEmpty(q) {
     await q('insert into settings (key, value) values ($1, $2) on conflict (key) do nothing', [key, j(value)]);
   }
   return true;
+}
+
+/**
+ * Colores de las fotos para tiendas creadas antes de que existieran. Solo toca productos
+ * del catálogo inicial que siguen con su única variante sin nombre ni color (nunca
+ * sobrescribe lo que se haya editado en el panel). La variante existente pasa a ser el
+ * primer color, así los pedidos antiguos siguen apuntando a ella.
+ */
+async function backfillColors(q) {
+  let changed = 0;
+  for (const p of seed.products) {
+    if (!p.variants?.length) continue;
+    const [prod] = await q('select id, ref from products where slug = $1', [p.slug]);
+    if (!prod) continue;
+    const vs = await q('select id, name, color from variants where product_id = $1', [prod.id]);
+    if (vs.length !== 1 || vs[0].name !== null || vs[0].color !== null) continue;
+    const [first, ...rest] = p.variants;
+    await q('update variants set name = $2, color = $3, sku = $4, sort = 1 where id = $1', [
+      vs[0].id, j(first.name), first.color, `${prod.ref}-1`
+    ]);
+    let i = 1;
+    for (const v of rest) {
+      i += 1;
+      await q('insert into variants (product_id, name, color, sku, stock, sort) values ($1,$2,$3,$4,$5,$6)', [
+        prod.id, j(v.name), v.color, `${prod.ref}-${i}`, v.stock ?? null, i
+      ]);
+    }
+    changed += 1;
+  }
+  return changed;
 }
 
 async function ensureAdmin(q) {
@@ -119,6 +149,8 @@ try {
       where user_id in (select id from users where role = 'admin')`
   );
   const seeded = await seedIfEmpty(conn.query);
+  const colored = seeded ? 0 : await backfillColors(conn.query);
+  if (colored) console.log(`[db] colores añadidos a ${colored} productos del catálogo inicial`);
   const admin = await ensureAdmin(conn.query);
   console.log(`[db] migraciones aplicadas${seeded ? ' · catálogo inicial cargado' : ''}${admin ? ` · admin creado: ${admin}` : ''}`);
 } finally {

@@ -160,6 +160,7 @@ export type RequestForMail = {
   name: string;
   phone: string | null;
   productName: Localized;
+  variantName?: Localized | null;
   quantity: number;
   personalization: ItemPersonalization;
   notes: string | null;
@@ -168,7 +169,7 @@ export type RequestForMail = {
 function requestSummary(r: RequestForMail, L: Lang) {
   const pz = personalizationText(r.personalization, L);
   return p(
-    `<b>${esc(loc(r.productName, L))}</b> × ${r.quantity}${pz ? `<br>${pz}` : ''}${
+    `<b>${esc(loc(r.productName, L))}</b> × ${r.quantity}${r.variantName ? `<br>${esc(loc(r.variantName, L))}` : ''}${pz ? `<br>${pz}` : ''}${
       r.notes ? `<br><span style="color:${C.muted};">${esc(r.notes)}</span>` : ''
     }`
   );
