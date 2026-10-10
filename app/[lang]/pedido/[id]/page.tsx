@@ -33,8 +33,9 @@ export default async function OrderPage({ params, searchParams }: Props) {
   const d = t(lang);
 
   const pending = order.status === 'pending_payment';
-  const failed = pending && (r === 'ko' || order.lastPayment?.status === 'denied');
-  const waiting = pending && !failed && r === 'ok';
+  // Cobro recibido que la tienda está revisando: se muestra «confirmando», nunca otro botón de pago.
+  const failed = pending && !order.authorized && (r === 'ko' || order.lastPayment?.status === 'denied');
+  const waiting = pending && !failed && (r === 'ok' || order.authorized);
 
   return (
     <section className="lp-section lp-section--seamless">

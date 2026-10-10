@@ -3,6 +3,7 @@ import { db, schema } from '@/lib/db';
 import { COUPON_KIND_CA, dateCa, eur, eurInput } from '@/lib/admin-labels';
 import { deleteCoupon, saveCoupon } from '@/app/actions/admin';
 import { Flash } from '@/components/admin-ui';
+import { requireAdmin } from '@/lib/auth';
 
 export const metadata = { title: 'Cupons' };
 
@@ -74,6 +75,8 @@ function CouponForm({ c }: { c?: C }) {
 }
 
 export default async function Coupons({ searchParams }: { searchParams: Promise<{ ok?: string; e?: string }> }) {
+  // Cada pàgina comprova l'accés per si mateixa: la comprovació del layout sola no n'hi ha prou.
+  await requireAdmin();
   const { ok, e } = await searchParams;
   const coupons = await db.select().from(schema.coupons).orderBy(desc(schema.coupons.createdAt));
   return (

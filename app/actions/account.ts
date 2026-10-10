@@ -14,6 +14,7 @@ import {
   clientIp,
   createSession,
   destroySession,
+  destroyUserSessions,
   getUser,
   hashPassword,
   isEmail,
@@ -23,32 +24,33 @@ import {
   sha256,
   verifyPassword
 } from '@/lib/auth';
-import { isLang, path, type Lang } from '@/lib/routes';
+import { isLang, path, safeNext as safeInternal, type Lang } from '@/lib/routes';
+
+const safeNext = (next: string, lang: Lang) => safeInternal(next, path(lang, 'cuenta'));
 import { sendMailSafe } from '@/lib/mail';
 import { passwordResetMail } from '@/lib/emails';
 
 const s = (f: FormData, k: string, max = 300) => String(f.get(k) ?? '').trim().slice(0, max);
 const langOf = (f: FormData): Lang => (isLang(f.get('lang')) ? (f.get('lang') as Lang) : 'es');
 
-/** Solo rutas internas de la propia web como destino tras entrar. */
-function safeNext(next: string, lang: Lang): string {
-  return /^\/(es|ca)(\/[\w\-./]*)?(\?[\w=&%.-]*)?$/.test(next) && !next.startsWith('//') ? next : path(lang, 'cuenta');
-}
-
 export async function login(form: FormData) {
   const lang = langOf(form);
   const next = safeNext(s(form, 'next', 300), lang);
   const back = (e: string) => `${path(lang, 'cuenta', 'acceder')}?e=${e}&next=${encodeURIComponent(next)}`;
   const email = normalizeEmail(s(form, 'email', 254));
-  const key = `login:${await clientIp()}:${email}`;
-  if (!checkRate(key)) redirect(back('tooMany'));
-  const user = await authenticate(email, String(form.get('password') ?? ''));
+  // Dos límites: por IP (muchas cuentas desde un sitio) y por cuenta (una cuenta desde muchos sitios).
+  const ipKey = `login-ip:${await clientIp()}`;
+  const emailKey = `login-email:${email}`;
+  if (!checkRate(ipKey, 20) || !checkRate(emailKey, 30)) redirect(back('tooMany'));
+  const user = await authenticate(email, String(form.get('password') ?? '').slice(0, 200));
   if (!user) {
-    registerFailure(key);
+    registerFailure(ipKey);
+    registerFailure(emailKey);
     redirect(back('credentials'));
   }
-  clearFailures(key);
-  await createSession(user.id);
+  clearFailures(emailKey);
+  // Una cuenta de administración entra por el panel, con su sesión corta.
+  await createSession(user.id, user.role === 'admin' ? 'admin' : 'customer');
   redirect(next);
 }
 
@@ -84,10 +86,15 @@ export async function requestPasswordReset(form: FormData) {
   const lang = langOf(form);
   const email = normalizeEmail(s(form, 'email', 254));
   const key = `reset:${await clientIp()}`;
-  if (checkRate(key) && isEmail(email)) {
+  const emailKey = `reset-email:${email}`;
+  // Máx. 3 correos por cuenta cada hora: nadie puede usar la web para inundar un buzón.
+  if (checkRate(key) && checkRate(emailKey, 3) && isEmail(email)) {
     registerFailure(key);
-    const [user] = await db.select().from(schema.users).where(eq(schema.users.email, email)).limit(1);
-    if (user) {
+    registerFailure(emailKey, 3600_000);
+    // Todo en segundo plano: la respuesta tarda lo mismo exista o no la cuenta.
+    void (async () => {
+      const [user] = await db.select().from(schema.users).where(eq(schema.users.email, email)).limit(1);
+      if (!user) return;
       const token = randomToken();
       await db.insert(schema.passwordResets).values({
         tokenHash: sha256(token),
@@ -95,7 +102,7 @@ export async function requestPasswordReset(form: FormData) {
         expiresAt: new Date(Date.now() + 3600_000)
       });
       await sendMailSafe(passwordResetMail(user.email, (user.lang as Lang) ?? lang, token));
-    }
+    })().catch((e) => console.error('[recuperar]', e));
   }
   // Misma respuesta exista o no la cuenta.
   redirect(`${path(lang, 'cuenta', 'recuperar')}?sent=1`);
@@ -119,10 +126,16 @@ export async function resetPassword(form: FormData) {
     )
     .limit(1);
   if (!row) redirect(back('invalid'));
+  // Se marca como usado antes de nada y solo si nadie lo ha usado ya (dos envíos a la vez no valen).
+  const claimed = await db
+    .update(schema.passwordResets)
+    .set({ usedAt: new Date() })
+    .where(and(eq(schema.passwordResets.tokenHash, row.tokenHash), isNull(schema.passwordResets.usedAt)))
+    .returning({ userId: schema.passwordResets.userId });
+  if (!claimed.length) redirect(back('invalid'));
   await db.update(schema.users).set({ passwordHash: await hashPassword(password), updatedAt: new Date() }).where(eq(schema.users.id, row.userId));
-  await db.update(schema.passwordResets).set({ usedAt: new Date() }).where(eq(schema.passwordResets.tokenHash, row.tokenHash));
   // Cierra las sesiones abiertas con la contraseña anterior.
-  await db.delete(schema.sessions).where(eq(schema.sessions.userId, row.userId));
+  await destroyUserSessions(row.userId);
   redirect(`${path(lang, 'cuenta', 'acceder')}?reset=1`);
 }
 
@@ -145,11 +158,19 @@ export async function changePassword(form: FormData) {
   const user = await getUser();
   if (!user) redirect(path(lang, 'cuenta', 'acceder'));
   const back = (q: string) => `${path(lang, 'cuenta', 'datos')}?${q}`;
+  const key = `password:${user.id}`;
+  if (!checkRate(key, 5)) redirect(back('e=current'));
   const [row] = await db.select().from(schema.users).where(eq(schema.users.id, user.id)).limit(1);
-  if (!row || !(await verifyPassword(String(form.get('current') ?? ''), row.passwordHash))) redirect(back('e=current'));
+  if (!row || !(await verifyPassword(String(form.get('current') ?? '').slice(0, 200), row.passwordHash))) {
+    registerFailure(key);
+    redirect(back('e=current'));
+  }
   const password = String(form.get('password') ?? '');
   if (password.length < 10 || password.length > 200) redirect(back('e=password'));
   await db.update(schema.users).set({ passwordHash: await hashPassword(password), updatedAt: new Date() }).where(eq(schema.users.id, user.id));
+  // Cierra todas las sesiones (también una posible sesión robada) y abre una nueva aquí.
+  await destroyUserSessions(user.id);
+  await createSession(user.id, user.role === 'admin' ? 'admin' : 'customer');
   redirect(back('ok=1'));
 }
 

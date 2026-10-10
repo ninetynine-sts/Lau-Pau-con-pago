@@ -105,8 +105,8 @@ export default async function Settings({ searchParams }: { searchParams: Promise
             <input className="lp-input" id="a-email" name="email" type="email" required />
           </div>
           <div className="lp-field">
-            <label htmlFor="a-pass">Contrasenya (mínim 10 caràcters)</label>
-            <input className="lp-input" id="a-pass" name="password" type="password" minLength={10} autoComplete="new-password" required />
+            <label htmlFor="a-pass">Contrasenya (mínim 12 caràcters)</label>
+            <input className="lp-input" id="a-pass" name="password" type="password" minLength={12} maxLength={200} autoComplete="new-password" required />
           </div>
           <div>
             <button className="lp-btn" type="submit">

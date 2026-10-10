@@ -7,10 +7,13 @@ import { r2Enabled } from '@/lib/storage';
 import { loc, orderNumber } from '@/lib/i18n';
 import { ORDER_STATUS_CA, REQUEST_STATUS_CA, dateCa, eur } from '@/lib/admin-labels';
 import { Status } from '@/components/admin-ui';
+import { requireAdmin } from '@/lib/auth';
 
 export const metadata = { title: 'Inici' };
 
 export default async function Dashboard() {
+  // Cada pàgina comprova l'accés per si mateixa: la comprovació del layout sola no n'hi ha prou.
+  await requireAdmin();
   const monthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
   const settings = await getSettings();
   const [[toPrepare], [newRequests], [month], recent, requests, lowStock] = await Promise.all([

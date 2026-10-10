@@ -105,12 +105,19 @@ async function ensureAdmin(q) {
      on conflict (email) do update set role = 'admin', password_hash = excluded.password_hash`,
     [email, hash, 'Lau&Pau']
   );
+  // Si el correo ya tenía cuenta, sus sesiones anteriores dejan de valer.
+  await q(`delete from sessions where user_id = (select id from users where email = $1)`, [email]);
   return email;
 }
 
 const conn = await connect();
 try {
   await conn.migrate();
+  // Las sesiones del panel duran como máximo 12 h: se recortan las anteriores a esta norma.
+  await conn.query(
+    `update sessions set expires_at = least(expires_at, now() + interval '12 hours')
+      where user_id in (select id from users where role = 'admin')`
+  );
   const seeded = await seedIfEmpty(conn.query);
   const admin = await ensureAdmin(conn.query);
   console.log(`[db] migraciones aplicadas${seeded ? ' · catálogo inicial cargado' : ''}${admin ? ` · admin creado: ${admin}` : ''}`);

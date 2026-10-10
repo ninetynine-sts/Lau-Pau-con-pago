@@ -5,10 +5,13 @@ import { loc } from '@/lib/i18n';
 import { REQUEST_STATUS_CA, dateCa } from '@/lib/admin-labels';
 import { Status } from '@/components/admin-ui';
 import { REQUEST_STATUSES, type RequestStatus } from '@/lib/db/schema';
+import { requireAdmin } from '@/lib/auth';
 
 export const metadata = { title: 'Sol·licituds' };
 
 export default async function Requests({ searchParams }: { searchParams: Promise<{ estat?: string }> }) {
+  // Cada pàgina comprova l'accés per si mateixa: la comprovació del layout sola no n'hi ha prou.
+  await requireAdmin();
   const { estat = 'new' } = await searchParams;
   const status = (REQUEST_STATUSES as readonly string[]).includes(estat) ? (estat as RequestStatus) : null;
   const rows = await db

@@ -8,7 +8,7 @@ import { and, eq } from 'drizzle-orm';
 import { db, schema } from '@/lib/db';
 import { checkRate, clientIp, getUser, isEmail, normalizeEmail, randomToken, registerFailure } from '@/lib/auth';
 import { computeTotals, priceCart, type CartInput } from '@/lib/shop';
-import { createOrder, startPayment } from '@/lib/orders';
+import { createOrder, hasAuthorizedPayment, startPayment } from '@/lib/orders';
 import { formatPrice, loc, t } from '@/lib/i18n';
 import { isLang, type Lang } from '@/lib/routes';
 import { sendMailSafe } from '@/lib/mail';
@@ -17,6 +17,21 @@ import { getSettings } from '@/lib/settings';
 import type { Address } from '@/lib/db/schema';
 
 const str = (v: FormDataEntryValue | null | unknown, max = 500) => String(v ?? '').trim().slice(0, max);
+
+/**
+ * Cupones: 15 códigos no utilizables cada 15 minutos por IP. Así no se pueden adivinar a
+ * fuerza de probar. Devuelve el código a comprobar, o null si esa IP ya ha probado demasiados.
+ */
+async function couponGate(raw: unknown): Promise<{ code: string | null; key: string; blocked: boolean }> {
+  const code = str(raw, 40) || null;
+  const key = `coupon:${await clientIp()}`;
+  if (code && !checkRate(key, 15)) return { code: null, key, blocked: true };
+  return { code, key, blocked: false };
+}
+function couponAfter(gate: { key: string; blocked: boolean }, totals: Awaited<ReturnType<typeof computeTotals>>) {
+  if (totals.coupon && !totals.coupon.ok) registerFailure(gate.key); // cualquier código no utilizable cuenta
+  if (gate.blocked) totals.coupon = { ok: false, reason: 'invalid' };
+}
 
 /* ------------------------------------------------- solicitud personalizada --- */
 
@@ -74,6 +89,11 @@ export async function submitRequest(_prev: RequestState, form: FormData): Promis
     .limit(1);
 
   if (Object.keys(errors).length) return { ok: false, errors };
+  // Cada solicitud envía un correo a la dirección indicada: máx. 3 por dirección cada hora,
+  // para que nadie use la web para enviar correos a terceros.
+  const mailKey = `req-email:${email}`;
+  if (!checkRate(mailKey, 3)) return { ok: false, errors: {}, message: d.accountPages.errors.tooMany };
+  registerFailure(mailKey, 3600_000);
   registerFailure(rateKey); // cuenta como intento: máx. 8 solicitudes cada 15 min por IP
 
   const user = await getUser();
@@ -114,14 +134,16 @@ export async function quote(input: {
   couponCode?: string | null;
 }) {
   const lang = isLang(input.lang) ? input.lang : 'es';
-  const lines = await priceCart(input.items ?? []);
+  const lines = await priceCart(Array.isArray(input.items) ? input.items : []);
   const subtotalCents = lines.reduce((s, l) => s + l.unitPriceCents * l.quantity, 0);
+  const gate = await couponGate(input.couponCode);
   const totals = await computeTotals({
     subtotalCents,
-    country: (input.country ?? '').slice(0, 2),
+    country: str(input.country, 2),
     shippingMethodId: input.shippingMethodId ?? null,
-    couponCode: input.couponCode ?? null
+    couponCode: gate.code
   });
+  couponAfter(gate, totals);
   return {
     lines: lines.map((l) => ({
       ...l,
@@ -147,12 +169,14 @@ export async function quoteRequest(input: {
     .from(schema.orders)
     .where(and(eq(schema.orders.publicId, str(input.publicId, 64)), eq(schema.orders.source, 'request')))
     .limit(1);
+  const gate = await couponGate(input.couponCode);
   const totals = await computeTotals({
     subtotalCents: order?.subtotalCents ?? 0,
-    country: (input.country ?? '').slice(0, 2),
+    country: str(input.country, 2),
     shippingMethodId: input.shippingMethodId ?? null,
-    couponCode: input.couponCode ?? null
+    couponCode: gate.code
   });
+  couponAfter(gate, totals);
   return { lines: [], ...totals, couponMessage: couponMessage(totals.coupon, lang) };
 }
 
@@ -203,12 +227,14 @@ function validateContact(p: CheckoutPayload, lang: Lang) {
 
 async function resolveShipping(p: CheckoutPayload, lang: Lang, subtotalCents: number, country: string, errors: Record<string, string>) {
   const d = t(lang).checkout.errors;
+  const gate = await couponGate(p.couponCode);
   const totals = await computeTotals({
     subtotalCents,
     country,
     shippingMethodId: p.shippingMethodId,
-    couponCode: str(p.couponCode, 40) || null
+    couponCode: gate.code
   });
+  couponAfter(gate, totals);
   if (!totals.shipping) errors.method = d.method;
   let address: Address | null = null;
   if (totals.shipping && !totals.shipping.isPickup) {
@@ -245,6 +271,9 @@ async function maybeSaveAddress(userId: number | undefined, save: boolean, addre
 export async function placeOrder(p: CheckoutPayload): Promise<CheckoutResult> {
   const lang: Lang = isLang(p.lang) ? p.lang : 'es';
   const d = t(lang).checkout.errors;
+  // Máx. 10 pedidos cada 15 minutos por IP: nadie puede llenar el panel de pedidos falsos.
+  const orderKey = `order:${await clientIp()}`;
+  if (!checkRate(orderKey, 10)) return { ok: false, errors: {}, message: t(lang).accountPages.errors.tooMany };
   const { errors, email, name, phone, country } = validateContact(p, lang);
 
   const lines = await priceCart(p.items ?? []);
@@ -284,6 +313,7 @@ export async function placeOrder(p: CheckoutPayload): Promise<CheckoutResult> {
         quantity: l.quantity
       }))
     });
+    registerFailure(orderKey);
     await maybeSaveAddress(user?.id, p.saveAddress, address);
     const form = await startPayment(order.id);
     return { ok: true, redsys: { url: form.url, fields: form.fields } };
@@ -297,6 +327,8 @@ export async function placeOrder(p: CheckoutPayload): Promise<CheckoutResult> {
 export async function payRequestOrder(p: CheckoutPayload): Promise<CheckoutResult> {
   const lang: Lang = isLang(p.lang) ? p.lang : 'es';
   const d = t(lang).checkout.errors;
+  const orderKey = `order:${await clientIp()}`;
+  if (!checkRate(orderKey, 10)) return { ok: false, errors: {}, message: t(lang).accountPages.errors.tooMany };
   const [order] = await db
     .select()
     .from(schema.orders)
@@ -306,6 +338,9 @@ export async function payRequestOrder(p: CheckoutPayload): Promise<CheckoutResul
   if (order.paymentLinkExpiresAt && order.paymentLinkExpiresAt < new Date()) {
     return { ok: false, errors: {}, message: t(lang).payLink.expired };
   }
+
+  // Ya hay un cobro recibido (en revisión): no se cambia el pedido ni se cobra otra vez.
+  if (await hasAuthorizedPayment(order.id)) return { ok: false, errors: {}, message: t(lang).payLink.paid };
 
   const { errors, email, name, phone, country } = validateContact(p, lang);
   const { totals, address, couponCode } = await resolveShipping(p, lang, order.subtotalCents, country, errors);
@@ -330,7 +365,9 @@ export async function payRequestOrder(p: CheckoutPayload): Promise<CheckoutResul
         customerNotes: str(p.notes, 1000) || order.customerNotes,
         updatedAt: new Date()
       })
-      .where(eq(schema.orders.id, order.id));
+      // Solo si sigue pendiente: si el banco lo acaba de cobrar, ya no se toca.
+      .where(and(eq(schema.orders.id, order.id), eq(schema.orders.status, 'pending_payment')));
+    registerFailure(orderKey);
     await maybeSaveAddress(user?.id, p.saveAddress, address);
     const form = await startPayment(order.id);
     return { ok: true, redsys: { url: form.url, fields: form.fields } };
@@ -348,6 +385,7 @@ export async function retryPayment(publicId: string): Promise<CheckoutResult> {
   if (order.paymentLinkExpiresAt && order.paymentLinkExpiresAt < new Date()) {
     return { ok: false, errors: {}, message: t(lang).payLink.expired };
   }
+  if (await hasAuthorizedPayment(order.id)) return { ok: false, errors: {}, message: t(lang).payLink.paid };
   if (order.source === 'cart') {
     // Las existencias pueden haber cambiado desde que se creó el pedido.
     const items = await db.select().from(schema.orderItems).where(eq(schema.orderItems.orderId, order.id));
@@ -356,6 +394,11 @@ export async function retryPayment(publicId: string): Promise<CheckoutResult> {
       return { ok: false, errors: {}, message: t(lang).checkout.errors.stock };
     }
   }
-  const form = await startPayment(order.id);
-  return { ok: true, redsys: { url: form.url, fields: form.fields } };
+  try {
+    const form = await startPayment(order.id);
+    return { ok: true, redsys: { url: form.url, fields: form.fields } };
+  } catch (e) {
+    console.error('[retry]', e);
+    return { ok: false, errors: {}, message: t(lang).checkout.errors.generic };
+  }
 }

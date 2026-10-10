@@ -13,6 +13,8 @@ import { db, schema } from './db';
 
 const COOKIE = 'lp_session';
 const SESSION_DAYS = 30;
+/** Las sesiones de administración caducan antes: dan acceso a datos de todas las clientas. */
+const ADMIN_SESSION_HOURS = 12;
 
 export type SessionUser = {
   id: number;
@@ -47,9 +49,10 @@ export async function verifyPassword(password: string, hash: string): Promise<bo
   return bcrypt.compare(password, hash);
 }
 
-export async function createSession(userId: number): Promise<void> {
+export async function createSession(userId: number, role: 'customer' | 'admin' = 'customer'): Promise<void> {
   const token = randomToken();
-  const expiresAt = new Date(Date.now() + SESSION_DAYS * 86400_000);
+  const ms = role === 'admin' ? ADMIN_SESSION_HOURS * 3600_000 : SESSION_DAYS * 86400_000;
+  const expiresAt = new Date(Date.now() + ms);
   await db.insert(schema.sessions).values({ id: sha256(token), userId, expiresAt });
   // Limpieza ocasional de sesiones caducadas.
   if (Math.random() < 0.05) await db.delete(schema.sessions).where(lt(schema.sessions.expiresAt, new Date()));
@@ -67,6 +70,11 @@ export async function destroySession(): Promise<void> {
   const token = jar.get(COOKIE)?.value;
   if (token) await db.delete(schema.sessions).where(eq(schema.sessions.id, sha256(token)));
   jar.delete(COOKIE);
+}
+
+/** Cierra todas las sesiones de una cuenta (cambio de contraseña o de permisos). */
+export async function destroyUserSessions(userId: number): Promise<void> {
+  await db.delete(schema.sessions).where(eq(schema.sessions.userId, userId));
 }
 
 export const getUser = cache(async (): Promise<SessionUser | null> => {
@@ -105,24 +113,52 @@ export async function requireCustomer(loginPath: string): Promise<SessionUser> {
 const attempts = new Map<string, { n: number; until: number }>();
 const WINDOW = 15 * 60_000;
 const MAX = 8;
+const MAX_KEYS = 50_000; // tope de memoria: nadie puede llenar el servidor inventando claves
 
+/**
+ * IP real de quien llama. La cabecera X-Forwarded-For la puede escribir cualquiera; solo
+ * son fiables las entradas que añaden nuestros propios proxies, que van al final.
+ * TRUST_PROXY_HOPS = número de proxies delante de la app (Hostinger: 1).
+ */
 export async function clientIp(): Promise<string> {
   const h = await headers();
-  return h.get('x-forwarded-for')?.split(',')[0]?.trim() || h.get('x-real-ip') || 'local';
+  const hops = Math.max(1, Number(process.env.TRUST_PROXY_HOPS ?? 1) || 1);
+  const chain = (h.get('x-forwarded-for') ?? '')
+    .split(',')
+    .map((x) => x.trim())
+    .filter(Boolean);
+  if (chain.length) return chain[Math.max(0, chain.length - hops)];
+  return h.get('x-real-ip')?.trim() || 'local';
 }
 
-/** true si se puede seguir intentando. */
-export function checkRate(key: string): boolean {
+function sweep(now: number) {
+  if (attempts.size < MAX_KEYS) return;
+  for (const [k, v] of attempts) if (v.until < now) attempts.delete(k);
+  // Si aun así está lleno, se descartan solo claves con un único intento: un bloqueo ya
+  // alcanzado (muchos intentos) nunca se pierde por mucho que alguien invente claves.
+  if (attempts.size >= MAX_KEYS) {
+    let drop = attempts.size - MAX_KEYS + 1000;
+    for (const [k, v] of attempts) {
+      if (v.n > 1) continue;
+      attempts.delete(k);
+      if (--drop <= 0) break;
+    }
+  }
+}
+
+/** true si se puede seguir intentando. `max` por defecto: 8 intentos cada 15 minutos. */
+export function checkRate(key: string, max = MAX): boolean {
   const now = Date.now();
   const a = attempts.get(key);
   if (!a || a.until < now) return true;
-  return a.n < MAX;
+  return a.n < max;
 }
 
-export function registerFailure(key: string): void {
+export function registerFailure(key: string, windowMs = WINDOW): void {
   const now = Date.now();
+  sweep(now);
   const a = attempts.get(key);
-  if (!a || a.until < now) attempts.set(key, { n: 1, until: now + WINDOW });
+  if (!a || a.until < now) attempts.set(key, { n: 1, until: now + windowMs });
   else a.n += 1;
 }
 

@@ -22,7 +22,7 @@ export const ERR_CA: Record<string, string> = {
   valor: 'Indica el valor del descompte.',
   repetit: 'Ja existeix un cupó amb aquest codi.',
   correu: 'Revisa el correu electrònic.',
-  contrasenya: 'La contrasenya ha de tenir almenys 10 caràcters.',
+  contrasenya: 'La contrasenya ha de tenir almenys 12 caràcters.',
   tumateixa: 'No et pots treure l’accés a tu mateixa.'
 };
 

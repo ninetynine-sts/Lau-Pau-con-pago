@@ -6,10 +6,13 @@ import { getCategories } from '@/lib/shop';
 import { loc } from '@/lib/i18n';
 import { ProductForm } from '@/components/admin-product-form';
 import { Flash } from '@/components/admin-ui';
+import { requireAdmin } from '@/lib/auth';
 
 export const metadata = { title: 'Producte' };
 
 export default async function EditProduct({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ ok?: string; e?: string; msg?: string }> }) {
+  // Cada pàgina comprova l'accés per si mateixa: la comprovació del layout sola no n'hi ha prou.
+  await requireAdmin();
   const { id } = await params;
   const { ok, e, msg } = await searchParams;
   const [p] = await db.select().from(schema.products).where(eq(schema.products.id, Number(id))).limit(1);

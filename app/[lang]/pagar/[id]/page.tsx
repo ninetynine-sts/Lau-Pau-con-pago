@@ -23,12 +23,12 @@ export default async function PayLink({ params }: { params: Promise<{ lang: stri
   const d = t(lang);
 
   const expired = order.paymentLinkExpiresAt !== null && order.paymentLinkExpiresAt < new Date();
-  if (order.status !== 'pending_payment' || expired) {
+  if (order.status !== 'pending_payment' || order.authorized || expired) {
     return (
       <section className="lp-section lp-section--seamless">
         <div className="lp-container lp-stack--lg lp-center">
           <Hearts set={[[26, 70], [34, 96]]} />
-          <h1 style={{ fontSize: 'var(--h2)' }}>{order.status === 'pending_payment' ? d.payLink.expired : d.payLink.paid}</h1>
+          <h1 style={{ fontSize: 'var(--h2)' }}>{order.status === 'pending_payment' && !order.authorized ? d.payLink.expired : d.payLink.paid}</h1>
           <Link className="lp-btn" href={path(lang, 'pedido', order.publicId)}>
             <Sheen />
             {d.accountPages.view}

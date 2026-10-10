@@ -56,3 +56,9 @@ export function switchLang(pathname: string, to: Lang): string {
   const rest = parts.slice(1).map((seg) => (from === 'ca' ? SEGMENTS_ES[seg] ?? seg : seg));
   return path(to, ...rest);
 }
+
+/** Destino tras entrar: solo rutas internas de la web pública; cualquier otra cosa → `fallback`. */
+export function safeNext(next: string | undefined | null, fallback: string): string {
+  const n = String(next ?? '');
+  return /^\/(es|ca)(\/[\w\-./]*)?(\?[\w=&%.-]*)?$/.test(n) && !n.startsWith('//') && !n.includes('..') ? n : fallback;
+}

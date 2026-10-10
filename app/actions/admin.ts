@@ -15,6 +15,7 @@ import {
   clientIp,
   createSession,
   destroySession,
+  destroyUserSessions,
   hashPassword,
   isEmail,
   normalizeEmail,
@@ -24,7 +25,7 @@ import {
 } from '@/lib/auth';
 import { sendMailSafe } from '@/lib/mail';
 import { orderShippedMail, pickupReadyMail, quoteReadyMail, requestRejectedMail } from '@/lib/emails';
-import { loadOrderForMail } from '@/lib/orders';
+import { hasAuthorizedPayment, loadOrderForMail } from '@/lib/orders';
 import { getSettings, saveSettings } from '@/lib/settings';
 import { saveImage } from '@/lib/storage';
 import { ORDER_STATUSES, type Localized, type OrderStatus, type Personalization, type ProductImage } from '@/lib/db/schema';
@@ -46,15 +47,22 @@ const intOrNull = (v: string) => (v === '' ? null : Number.isSafeInteger(Number(
 
 export async function adminLogin(form: FormData) {
   const email = normalizeEmail(s(form, 'email', 254));
-  const key = `admin:${await clientIp()}`;
-  if (!checkRate(key)) redirect('/admin/entrar?e=massa');
-  const user = await authenticate(email, String(form.get('password') ?? ''));
+  // Límite por IP y por cuenta: probar contraseñas cambiando de IP tampoco sirve.
+  const ipKey = `admin-ip:${await clientIp()}`;
+  // Mismo contador por cuenta que el acceso de clientas: no se suman dos cupos de intentos.
+  // Es alto a propósito (30 cada 15 min) para que nadie pueda dejar fuera a la tienda a base
+  // de fallar; con contraseñas de 12+ caracteres y bcrypt, 30 intentos no sirven para adivinar.
+  const emailKey = `login-email:${email}`;
+  if (!checkRate(ipKey, 8) || !checkRate(emailKey, 30)) redirect('/admin/entrar?e=massa');
+  const user = await authenticate(email, String(form.get('password') ?? '').slice(0, 200));
   if (!user || user.role !== 'admin') {
-    registerFailure(key);
+    registerFailure(ipKey);
+    registerFailure(emailKey);
     redirect('/admin/entrar?e=dades');
   }
-  clearFailures(key);
-  await createSession(user.id);
+  clearFailures(ipKey);
+  clearFailures(emailKey);
+  await createSession(user.id, 'admin');
   redirect('/admin');
 }
 
@@ -72,10 +80,13 @@ export async function updateOrder(form: FormData) {
   if (!ORDER_STATUSES.includes(status)) redirect(`/admin/comandes/${id}?e=estat`);
   const [before] = await db.select().from(schema.orders).where(eq(schema.orders.id, id)).limit(1);
   if (!before) redirect('/admin/comandes');
-  // Una comanda no pagada no es pot marcar com a pagada a mà: només Redsys la confirma.
-  if (before.status === 'pending_payment' && !['pending_payment', 'cancelled'].includes(status)) {
+  // Una comanda que el banc no ha cobrat mai no es pot marcar com a pagada a mà: només Redsys ho confirma.
+  // Excepció: un cobrament autoritzat que ha quedat en revisió (import diferent), que la botiga accepta.
+  const charged = Boolean(before.paidAt) || (await hasAuthorizedPayment(id));
+  if (!charged && !['pending_payment', 'cancelled'].includes(status)) {
     redirect(`/admin/comandes/${id}?e=nopagada`);
   }
+  const markPaidNow = !before.paidAt && charged && !['pending_payment', 'cancelled'].includes(status);
 
   const trackingNumber = s(form, 'trackingNumber', 120) || null;
   const trackingUrlRaw = s(form, 'trackingUrl', 500);
@@ -88,6 +99,7 @@ export async function updateOrder(form: FormData) {
       trackingUrl,
       adminNotes: s(form, 'adminNotes', 4000) || null,
       shippedAt: status === 'shipped' && !before.shippedAt ? new Date() : before.shippedAt,
+      paidAt: markPaidNow ? new Date() : before.paidAt,
       updatedAt: new Date()
     })
     .where(eq(schema.orders.id, id));
@@ -453,12 +465,15 @@ export async function createAdmin(form: FormData) {
   const email = normalizeEmail(s(form, 'email', 254));
   const password = String(form.get('password') ?? '');
   if (!isEmail(email)) redirect('/admin/configuracio?e=correu');
-  if (password.length < 10) redirect('/admin/configuracio?e=contrasenya');
+  if (password.length < 12 || password.length > 200) redirect('/admin/configuracio?e=contrasenya');
   const hash = await hashPassword(password);
-  await db
+  const [user] = await db
     .insert(schema.users)
     .values({ email, passwordHash: hash, name: s(form, 'name', 120), role: 'admin', lang: 'ca' })
-    .onConflictDoUpdate({ target: schema.users.email, set: { role: 'admin', passwordHash: hash } });
+    .onConflictDoUpdate({ target: schema.users.email, set: { role: 'admin', passwordHash: hash } })
+    .returning({ id: schema.users.id });
+  // Si el correu ja tenia compte, es tanquen totes les seves sessions: només la contrasenya nova hi dona accés.
+  await destroyUserSessions(user.id);
   redirect('/admin/configuracio?ok=admin');
 }
 
@@ -467,6 +482,7 @@ export async function removeAdmin(form: FormData) {
   const id = Number(form.get('id'));
   if (id === me.id) redirect('/admin/configuracio?e=tumateixa');
   await db.update(schema.users).set({ role: 'customer' }).where(and(eq(schema.users.id, id), eq(schema.users.role, 'admin')));
+  await destroyUserSessions(id);
   redirect('/admin/configuracio?ok=treta');
 }
 

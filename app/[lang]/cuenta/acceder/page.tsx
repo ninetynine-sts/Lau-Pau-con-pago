@@ -4,7 +4,7 @@ import { notFound, redirect } from 'next/navigation';
 import { Sheen } from '@/components/brand';
 import { AuthCard, FormMessage } from '@/components/account-ui';
 import { login } from '@/app/actions/account';
-import { isLang, path } from '@/lib/routes';
+import { isLang, path, safeNext } from '@/lib/routes';
 import { t } from '@/lib/i18n';
 import { getUser } from '@/lib/auth';
 
@@ -20,7 +20,7 @@ export default async function Login({
   const { lang } = await params;
   if (!isLang(lang)) notFound();
   const { e, next, reset } = await searchParams;
-  if (await getUser()) redirect(next && next.startsWith(`/${lang}`) ? next : path(lang, 'cuenta'));
+  if (await getUser()) redirect(safeNext(next, path(lang, 'cuenta')));
   const d = t(lang).accountPages;
   const errors = d.errors as Record<string, string>;
   const nextQ = next ? `?next=${encodeURIComponent(next)}` : '';

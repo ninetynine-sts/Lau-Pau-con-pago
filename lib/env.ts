@@ -55,6 +55,22 @@ export const env = {
   uploadDir: opt('UPLOAD_DIR') ?? './uploads'
 };
 
-if (isProd && env.redsys.env === 'production' && env.redsys.usingTestDefaults) {
-  throw new Error('REDSYS_ENV=production exige REDSYS_MERCHANT_CODE, REDSYS_TERMINAL y REDSYS_SECRET_KEY.');
+/*
+ * Comprobaciones al arrancar en producción (no durante «next build» ni en la demo del navegador).
+ * La clave de pruebas de Redsys es pública: con ella cualquiera podría firmar un aviso de
+ * «pago correcto». Por eso el servidor no arranca si se usaría en producción sin quererlo.
+ */
+const runtimeProd = isProd && typeof window === 'undefined' && process.env.NEXT_PHASE !== 'phase-production-build';
+if (runtimeProd) {
+  const allowTest = opt('REDSYS_ALLOW_TEST') === '1';
+  const missing = ['REDSYS_MERCHANT_CODE', 'REDSYS_TERMINAL', 'REDSYS_SECRET_KEY'].filter((k) => !opt(k));
+  const publicKey = env.redsys.secretKey === REDSYS_TEST_DEFAULTS.secretKey;
+  if ((missing.length || publicKey || env.redsys.env !== 'production') && !allowTest) {
+    throw new Error(
+      `[config] Redsys no está listo para cobrar de verdad (${
+        missing.length ? `faltan ${missing.join(', ')}` : publicKey ? 'se usa la clave pública de pruebas' : 'REDSYS_ENV no es production'
+      }). Configura las credenciales del banco o, solo para un entorno de pruebas, REDSYS_ALLOW_TEST=1.`
+    );
+  }
+  if (!env.siteUrl.startsWith('https://') && !/^http:\/\/localhost(:\d+)?$/.test(env.siteUrl)) throw new Error('[config] SITE_URL debe empezar por https:// en producción.');
 }

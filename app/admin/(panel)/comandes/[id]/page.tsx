@@ -10,10 +10,13 @@ import { Flash, Status } from '@/components/admin-ui';
 import { env } from '@/lib/env';
 import { path } from '@/lib/routes';
 import { ORDER_STATUSES } from '@/lib/db/schema';
+import { requireAdmin } from '@/lib/auth';
 
 export const metadata = { title: 'Comanda' };
 
 export default async function OrderDetail({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ ok?: string; e?: string }> }) {
+  // Cada pàgina comprova l'accés per si mateixa: la comprovació del layout sola no n'hi ha prou.
+  await requireAdmin();
   const { id } = await params;
   const { ok, e } = await searchParams;
   const [o] = await db.select().from(schema.orders).where(eq(schema.orders.id, Number(id))).limit(1);
@@ -24,7 +27,14 @@ export default async function OrderDetail({ params, searchParams }: { params: Pr
     db.select().from(schema.requests).where(eq(schema.requests.orderId, o.id)).limit(1)
   ]);
   const a = o.shippingAddress;
-  const allowed = o.status === 'pending_payment' ? ['pending_payment', 'cancelled'] : ORDER_STATUSES.filter((s) => s !== 'pending_payment');
+  // Cobrament autoritzat però en revisió (l'import no quadrava): la botiga decideix si l'accepta.
+  const inReview = o.status === 'pending_payment' && payments.some((p) => p.status === 'authorized');
+  const allowed =
+    o.status === 'pending_payment'
+      ? inReview
+        ? ['pending_payment', 'paid', 'cancelled']
+        : ['pending_payment', 'cancelled']
+      : ORDER_STATUSES.filter((s) => s !== 'pending_payment');
 
   return (
     <>
@@ -44,6 +54,13 @@ export default async function OrderDetail({ params, searchParams }: { params: Pr
         <Status s={o.status} label={ORDER_STATUS_CA[o.status]} />
       </div>
       <Flash ok={ok} e={e} />
+      {inReview ? (
+        <p className="ad-warn">
+          <b>Pagament per revisar:</b> Redsys ha cobrat un intent de pagament que no coincideix amb el total actual de la comanda
+          (la clienta la va canviar mentre pagava). Comprova l’import al portal del TPV: si és correcte, marca-la com a pagada; si no,
+          cancel·la-la i retorna el cobrament des del TPV.
+        </p>
+      ) : null}
       {o.stockIssue ? (
         <p className="ad-warn">
           <b>Atenció:</b> quan es va pagar, algun article no tenia prou estoc. Comprova que el pots servir abans d’enviar-la.

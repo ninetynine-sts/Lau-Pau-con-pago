@@ -5,10 +5,13 @@ import { loc } from '@/lib/i18n';
 import { eur } from '@/lib/admin-labels';
 import { adjustStock } from '@/app/actions/admin';
 import { Flash } from '@/components/admin-ui';
+import { requireAdmin } from '@/lib/auth';
 
 export const metadata = { title: 'Productes' };
 
 export default async function Products({ searchParams }: { searchParams: Promise<{ ok?: string }> }) {
+  // Cada pàgina comprova l'accés per si mateixa: la comprovació del layout sola no n'hi ha prou.
+  await requireAdmin();
   const { ok } = await searchParams;
   const products = await db.select().from(schema.products).orderBy(asc(schema.products.sort), asc(schema.products.id));
   const variants = products.length

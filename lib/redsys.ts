@@ -121,6 +121,9 @@ export type RedsysNotification = {
   responseCode: number;
   authorized: boolean;
   authCode?: string;
+  merchantCode?: string;
+  currency?: string;
+  transactionType?: string;
   params: Record<string, string>;
 };
 
@@ -177,6 +180,9 @@ export function verifyNotification(
     // 0000–0099: operación autorizada.
     authorized: Number.isFinite(responseCode) && responseCode >= 0 && responseCode <= 99,
     authCode: pick(params, 'Ds_AuthorisationCode')?.trim() || undefined,
+    merchantCode: pick(params, 'Ds_MerchantCode')?.trim() || undefined,
+    currency: pick(params, 'Ds_Currency')?.trim() || undefined,
+    transactionType: pick(params, 'Ds_TransactionType')?.trim() || undefined,
     params
   };
 }

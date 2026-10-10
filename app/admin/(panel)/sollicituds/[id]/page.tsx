@@ -7,10 +7,13 @@ import { ORDER_STATUS_CA, REQUEST_STATUS_CA, dateCa, eur, eurInput } from '@/lib
 import { quoteRequest, rejectRequest } from '@/app/actions/admin';
 import { Flash, Status } from '@/components/admin-ui';
 import { getSettings } from '@/lib/settings';
+import { requireAdmin } from '@/lib/auth';
 
 export const metadata = { title: 'Sol·licitud' };
 
 export default async function RequestDetail({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ ok?: string; e?: string }> }) {
+  // Cada pàgina comprova l'accés per si mateixa: la comprovació del layout sola no n'hi ha prou.
+  await requireAdmin();
   const { id } = await params;
   const { ok, e } = await searchParams;
   const [r] = await db.select().from(schema.requests).where(eq(schema.requests.id, Number(id))).limit(1);

@@ -76,10 +76,36 @@ código de comercio (FUC), terminal, clave SHA-256 de pruebas y de producción, 
 https://tudominio/api/redsys/notify
 ```
 
-Pruebas: deja `REDSYS_ENV=test` con las credenciales de prueba del banco y paga con las
-tarjetas de prueba que te den. Producción: `REDSYS_ENV=production` con las credenciales de
+Pruebas: deja `REDSYS_ENV=test` con las credenciales de prueba del banco, añade
+`REDSYS_ALLOW_TEST=1` y paga con las tarjetas de prueba que te den (sin esa variable, el
+servidor publicado no arranca en modo pruebas: es una protección para no salir a producción
+con la clave pública de pruebas, con la que cualquiera podría marcar pedidos como pagados). Producción: `REDSYS_ENV=production` con las credenciales de
 producción. Antes de activar producción, el banco suele revisar las páginas legales: completa
 lo marcado en amarillo en `lib/legal.ts`.
+
+### Seguridad: lo que hay que hacer al publicar
+
+- **Contraseñas del panel**: largas y únicas (mínimo 12 caracteres). Para añadir o cambiar
+  una cuenta desde el servidor: `npm run admin:create -- correo@dominio.ad` (pide la
+  contraseña sin mostrarla). Una vez creada la primera cuenta, borra `ADMIN_PASSWORD` de las
+  variables de Hostinger.
+- **HTTPS siempre**: `SITE_URL` debe empezar por `https://` (si no, el servidor no arranca).
+- **`TRUST_PROXY_HOPS=1`** en Hostinger, para que los límites de intentos usen la IP real.
+- **Correo configurado** (`RESEND_API_KEY`): sin él no salen los correos de recuperar
+  contraseña ni los avisos de pagos que hay que revisar.
+- Si la tienda recibe un aviso «Revisa el pagament», hay un cobro en Redsys que no se ha
+  aplicado solo (importe distinto, pedido cancelado o cobrado dos veces): compruébalo en el
+  portal del TPV y, en el panel, márcalo como pagado o cancélalo y devuelve el cobro.
+- **Primer despliegue**: deja `TRUST_PROXY_HOPS=1` y comprueba con el equipo de Hostinger
+  que hay exactamente un proxy delante de la app.
+
+Qué protege la web (resumen): sesiones con token aleatorio guardado solo como hash, cookie
+`HttpOnly`/`Secure`/`SameSite`; sesiones del panel de 12 h; cada página y acción del panel
+comprueba que quien entra es administradora; límites de intentos por IP y por cuenta;
+cambiar la contraseña o los permisos cierra las demás sesiones; los pedidos solo pasan a
+pagados con el aviso firmado de Redsys y si el importe coincide con el pedido; precios y
+descuentos se recalculan siempre en el servidor; CSP con nonce, HSTS y protección contra
+incrustar la web en otra página; fotos comprobadas por su contenido real.
 
 ### Correos (Resend)
 

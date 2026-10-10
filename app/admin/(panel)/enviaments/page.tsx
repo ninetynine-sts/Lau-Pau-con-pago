@@ -5,6 +5,7 @@ import { deleteShipping, markShippingReviewed, saveShipping } from '@/app/action
 import { Flash } from '@/components/admin-ui';
 import { getSettings } from '@/lib/settings';
 import type { Localized } from '@/lib/db/schema';
+import { requireAdmin } from '@/lib/auth';
 
 export const metadata = { title: 'Enviaments' };
 
@@ -84,6 +85,8 @@ function MethodForm({ m }: { m: M }) {
 }
 
 export default async function Shipping({ searchParams }: { searchParams: Promise<{ ok?: string; e?: string }> }) {
+  // Cada pàgina comprova l'accés per si mateixa: la comprovació del layout sola no n'hi ha prou.
+  await requireAdmin();
   const { ok, e } = await searchParams;
   const [methods, settings] = await Promise.all([
     db.select().from(schema.shippingMethods).orderBy(asc(schema.shippingMethods.sort), asc(schema.shippingMethods.id)),

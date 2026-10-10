@@ -6,12 +6,18 @@ import 'server-only';
 import { env } from './env';
 import { db, schema } from './db';
 
-export type Mail = { to: string; subject: string; html: string; replyTo?: string };
+/** `sensitive`: lleva un enlace que da acceso a la cuenta; su contenido nunca se guarda en la base de datos. */
+export type Mail = { to: string; subject: string; html: string; replyTo?: string; sensitive?: boolean };
+
+const stored = (mail: Mail) => (mail.sensitive ? '[contenido no guardado: enlace de acceso]' : mail.html);
 
 export async function sendMail(mail: Mail): Promise<boolean> {
   if (!env.mail.resendKey) {
-    await db.insert(schema.emailLog).values({ to: mail.to, subject: mail.subject, html: mail.html, status: 'logged' });
+    if (env.isProd) console.error('[correo] RESEND_API_KEY no está configurada: el correo no se ha enviado.');
+    await db.insert(schema.emailLog).values({ to: mail.to, subject: mail.subject, html: stored(mail), status: 'logged' });
     console.log(`[correo · sin RESEND_API_KEY] ${mail.to} · ${mail.subject}`);
+    // En local, el enlace de acceso solo aparece en la consola (nunca en la base de datos).
+    if (mail.sensitive && !env.isProd) console.log(mail.html.match(/href="([^"]+token=[^"]+)"/)?.[1]?.replace(/&amp;/g, '&') ?? '');
     return true;
   }
   try {
@@ -32,7 +38,7 @@ export async function sendMail(mail: Mail): Promise<boolean> {
   } catch (e) {
     const error = e instanceof Error ? e.message : String(e);
     console.error('[correo] error', error);
-    await db.insert(schema.emailLog).values({ to: mail.to, subject: mail.subject, html: mail.html, status: 'failed', error });
+    await db.insert(schema.emailLog).values({ to: mail.to, subject: mail.subject, html: stored(mail), status: 'failed', error });
     return false;
   }
 }

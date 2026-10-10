@@ -4,6 +4,7 @@ import { db, schema } from '@/lib/db';
 import { orderNumber } from '@/lib/i18n';
 import { ORDER_STATUS_CA, dateCa, eur } from '@/lib/admin-labels';
 import { Flash, Status } from '@/components/admin-ui';
+import { requireAdmin } from '@/lib/auth';
 
 export const metadata = { title: 'Comandes' };
 
@@ -16,6 +17,8 @@ const FILTERS: { id: string; label: string; statuses: string[] | null }[] = [
 ];
 
 export default async function Orders({ searchParams }: { searchParams: Promise<{ estat?: string; q?: string; ok?: string }> }) {
+  // Cada pàgina comprova l'accés per si mateixa: la comprovació del layout sola no n'hi ha prou.
+  await requireAdmin();
   const { estat = 'pendents', q = '', ok } = await searchParams;
   const f = FILTERS.find((x) => x.id === estat) ?? FILTERS[0];
   const conds: SQL[] = [];

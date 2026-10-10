@@ -29,8 +29,10 @@ function layout(body: string, lang: Lang): string {
 const h1 = (s: string) =>
   `<h1 style="font-family:Georgia,serif;font-weight:600;font-size:24px;line-height:1.2;margin:8px 0 14px;color:${C.ink};">${s}</h1>`;
 const p = (s: string) => `<p style="margin:0 0 14px;color:${C.soft};">${s}</p>`;
+/** Solo enlaces http(s); el atributo va escapado (un «"» no puede romper la etiqueta). */
+const safeHref = (href: string) => (/^https?:\/\//i.test(href) ? esc(href) : '#');
 const button = (href: string, label: string) =>
-  `<p style="margin:22px 0;"><a href="${href}" style="display:inline-block;background:${C.btn};color:#FAF9F6;text-decoration:none;font-weight:700;padding:13px 26px;border-radius:999px;">${esc(label)}</a></p>`;
+  `<p style="margin:22px 0;"><a href="${safeHref(href)}" style="display:inline-block;background:${C.btn};color:#FAF9F6;text-decoration:none;font-weight:700;padding:13px 26px;border-radius:999px;">${esc(label)}</a></p>`;
 
 type Line = { name: Localized; variantName: Localized | null; quantity: number; unitPriceCents: number; personalization?: ItemPersonalization };
 
@@ -237,7 +239,7 @@ export function passwordResetMail(to: string, lang: Lang, token: string) {
         lang === 'ca' ? 'Si no has estat tu, pots ignorar aquest correu.' : 'Si no has sido tú, puedes ignorar este correo.'
       }</span>`
     );
-  return { to, subject: `Lau&Pau · ${sub}`, html: layout(body, lang) };
+  return { to, subject: `Lau&Pau · ${sub}`, html: layout(body, lang), sensitive: true };
 }
 
 /* ------------------------------------------------------- a la tienda (CA) --- */
@@ -266,4 +268,15 @@ export function storeNewRequestMail(r: RequestForMail & { id: number }, to: stri
     requestSummary(r, 'ca') +
     button(`${env.siteUrl}/admin/sollicituds/${r.id}`, 'Revisa-la i envia el preu');
   return { to, subject: 'Lau&Pau · Sol·licitud de personalització nova', html: layout(body, 'ca'), replyTo: r.email };
+}
+
+/** Aviso a la tienda: pago cobrado que necesita revisión manual (importe distinto, pedido cancelado…). */
+export function storePaymentAlertMail(to: string, orderId: number, reason: string, amountCents: number) {
+  const n = orderNumber(orderId);
+  const body =
+    h1(`Revisa el pagament de la comanda ${n}`) +
+    `<p style="margin:0 0 14px;padding:12px 16px;background:#FBEAE7;color:#9B2C1E;border-radius:12px;"><b>Atenció:</b> ${esc(reason)}</p>` +
+    p(`Import cobrat per Redsys: <b>${formatPrice(amountCents, 'ca')}</b>. La comanda no s’ha marcat com a pagada automàticament.`) +
+    button(`${env.siteUrl}/admin/comandes/${orderId}`, 'Obre la comanda al tauler');
+  return { to, subject: `Lau&Pau · Revisa el pagament ${n}`, html: layout(body, 'ca') };
 }
