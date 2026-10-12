@@ -34,6 +34,11 @@ import { colorFromForm } from '@/lib/catalog';
 
 const s = (f: FormData, k: string, max = 500) => String(f.get(k) ?? '').trim().slice(0, max);
 const L = (f: FormData, k: string, max = 2000): Localized => ({ es: s(f, `${k}_es`, max), ca: s(f, `${k}_ca`, max) });
+/** Com L, però si només s'omple un idioma, l'altre en fa servir el mateix text. */
+const L1 = (f: FormData, k: string, max = 2000): Localized => {
+  const v = L(f, k, max);
+  return { es: v.es || v.ca, ca: v.ca || v.es };
+};
 
 /** «12,50» o «12.50» → 1250. null si no és un import vàlid. */
 function cents(v: string): number | null {
@@ -232,8 +237,8 @@ export async function saveProduct(form: FormData) {
   const id = Number(form.get('id')) || null;
   const back = (q: string) => redirect(id ? `/admin/productes/${id}?${q}` : `/admin/productes/nou?${q}`);
 
-  const name = L(form, 'name', 160);
-  if (!name.es || !name.ca) back('e=nom');
+  const name = L1(form, 'name', 160);
+  if (!name.es) back('e=nom');
   const price = cents(s(form, 'price', 20));
   if (price === null || price <= 0) back('e=preu');
 
@@ -267,18 +272,38 @@ export async function saveProduct(form: FormData) {
     ? ((await db.select({ images: schema.products.images }).from(schema.products).where(eq(schema.products.id, id)).limit(1))[0]?.images ?? [])
     : [];
   const keep = new Set(form.getAll('keepImage').map(String));
-  const images: ProductImage[] = current.filter((im) => keep.has(im.src));
+  let images: ProductImage[] = current.filter((im) => keep.has(im.src));
   const order = s(form, 'firstImage', 500);
   if (order) images.sort((a, b) => Number(b.src === order) - Number(a.src === order));
   const files = form.getAll('images').filter((f): f is File => f instanceof File && f.size > 0);
+  const added: ProductImage[] = [];
   for (const file of files.slice(0, 8)) {
     try {
-      images.push({ src: await saveImage(file), alt: { es: name.es, ca: name.ca } });
+      added.push({ src: await saveImage(file), alt: { es: name.es, ca: name.ca } });
     } catch (e) {
       console.error('[admin] foto', e);
       back(`e=foto&msg=${encodeURIComponent(e instanceof Error ? e.message : 'Error')}`);
     }
   }
+  // Ordre triat a l'editor: «e:<src>» (foto que ja hi era) o «n:<núm>» (foto nova, per ordre de pujada).
+  let photoOrder: string[] = [];
+  try {
+    const raw = JSON.parse(s(form, 'photoOrder', 8000) || '[]');
+    if (Array.isArray(raw)) photoOrder = raw.map(String).slice(0, 20);
+  } catch {
+    photoOrder = [];
+  }
+  if (photoOrder.length) {
+    const byOld = new Map(images.map((im) => [im.src, im]));
+    const ordered: ProductImage[] = [];
+    for (const tok of photoOrder) {
+      const im = tok.startsWith('e:') ? byOld.get(tok.slice(2)) : tok.startsWith('n:') ? added[Number(tok.slice(2))] : undefined;
+      if (im && !ordered.includes(im)) ordered.push(im);
+    }
+    // Res es perd: el que no surti a la llista va al final.
+    for (const im of [...images, ...added]) if (!ordered.includes(im)) ordered.push(im);
+    images = ordered;
+  } else images.push(...added);
 
   const badge = L(form, 'badge', 40);
   const values = {
@@ -286,8 +311,8 @@ export async function saveProduct(form: FormData) {
     ref: s(form, 'ref', 40),
     categoryId: s(form, 'categoryId', 60) || null,
     name,
-    shortDescription: L(form, 'short', 200),
-    description: L(form, 'description', 3000),
+    shortDescription: L1(form, 'short', 200),
+    description: L1(form, 'description', 3000),
     badge: badge.es || badge.ca ? badge : null,
     priceCents: price!,
     images,

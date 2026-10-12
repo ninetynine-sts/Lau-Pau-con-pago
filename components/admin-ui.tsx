@@ -10,7 +10,7 @@ export const OK_CA: Record<string, string> = {
 };
 
 export const ERR_CA: Record<string, string> = {
-  nom: 'Cal el nom en castellà i en català.',
+  nom: 'Cal el nom del producte (en català o en castellà).',
   preu: 'Revisa el preu (per exemple, 12,50).',
   slug: 'L’adreça del producte no és vàlida.',
   foto: 'No s’ha pogut pujar alguna foto.',

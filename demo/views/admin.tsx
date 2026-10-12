@@ -8,7 +8,8 @@ import { COUPON_KIND_CA, ORDER_STATUS_CA, REQUEST_STATUS_CA, dateCa, eur, eurInp
 import { ADMIN, db as live, nextId, nowIso, save, useDB, type OrderStatus } from '../mock/store';
 import { mailQuote, mailRejected, mailShipped, newOrder } from '../mock/shop';
 import { navigate, useHashPath } from '../shims/router';
-import { VariantColor } from '@/components/variant-color';
+import { ProductEditor } from '@/components/product-editor';
+import type { ProductImage } from '@/lib/db/schema';
 import { colorFromForm } from '@/lib/catalog';
 
 const cents = (v: string): number | null => {
@@ -134,7 +135,7 @@ export function AdminRoute({ segs }: { segs: string[] }) {
   if (!section) body = <Dashboard />;
   else if (section === 'comandes') body = id ? <OrderDetail id={Number(id)} /> : <Orders />;
   else if (section === 'sollicituds') body = id ? <RequestDetail id={Number(id)} /> : <Requests />;
-  else if (section === 'productes') body = id ? <ProductEdit id={Number(id)} /> : <Products />;
+  else if (section === 'productes') body = id === 'nou' ? <ProductEdit id={null} /> : id ? <ProductEdit id={Number(id)} /> : <Products />;
   else if (section === 'enviaments') body = <Shipping />;
   else if (section === 'cupons') body = <Coupons />;
   else if (section === 'configuracio') body = <Settings />;
@@ -834,6 +835,9 @@ function Products() {
           <h1>Productes</h1>
           <p>{products.length} productes · ajusta l’estoc aquí mateix o obre’n un per editar-lo.</p>
         </div>
+        <Link className="lp-btn" href="/admin/productes/nou">
+          + Nou producte
+        </Link>
       </div>
       <Flash msg={msg} />
       <section className="ad-card">
@@ -901,60 +905,83 @@ function Products() {
   );
 }
 
-function ProductEdit({ id }: { id: number }) {
+/** Mateix editor que el tauler real; aquí desa a la base de dades de la demo. */
+function ProductEdit({ id }: { id: number | null }) {
   const db = useDB();
-  const [msg, setMsg] = useState<{ text: string; error?: boolean }>({ text: '' });
-  const p = db.products.find((x) => x.id === id);
-  if (!p) return <p>Producte no trobat.</p>;
-  const variants = db.variants.filter((v) => v.productId === p.id);
-  const submit = (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const f = new FormData(e.currentTarget);
+  const [msg, setMsg] = useState('');
+  const p = id ? db.products.find((x) => x.id === id) : null;
+  if (id && !p) return <p>Producte no trobat.</p>;
+  const variants = p ? db.variants.filter((v) => v.productId === p.id).sort((a, b) => a.sort - b.sort) : [];
+
+  const onSave = async (f: FormData) => {
     const g = (k: string) => String(f.get(k) ?? '').trim();
+    const L1 = (k: string) => ({ es: g(`${k}_es`) || g(`${k}_ca`), ca: g(`${k}_ca`) || g(`${k}_es`) });
     const price = cents(g('price'));
-    if (!price) return setMsg({ text: 'Revisa el preu (per exemple, 12,50).', error: true });
-    if (!g('name_es') || !g('name_ca')) return setMsg({ text: 'Cal el nom en castellà i en català.', error: true });
-    const prod = live.products.find((x) => x.id === id)!;
-    Object.assign(prod, {
-      name: { es: g('name_es'), ca: g('name_ca') },
-      shortDescription: { es: g('short_es'), ca: g('short_ca') },
-      description: { es: g('description_es'), ca: g('description_ca') },
+    const name = L1('name');
+    if (!price || !name.es) return setMsg('Revisa el nom i el preu.');
+    // Fotos noves: a la demo es guarden petites dins del navegador.
+    const added: ProductImage[] = [];
+    for (const file of f.getAll('images').filter((x): x is File => x instanceof File && x.size > 0)) {
+      const bmp = await createImageBitmap(file);
+      const k = Math.min(1, 700 / Math.max(bmp.width, bmp.height));
+      const c = document.createElement('canvas');
+      c.width = Math.round(bmp.width * k);
+      c.height = Math.round(bmp.height * k);
+      c.getContext('2d')!.drawImage(bmp, 0, 0, c.width, c.height);
+      added.push({ src: c.toDataURL('image/jpeg', 0.82), alt: name, width: c.width, height: c.height });
+    }
+    const kept = (p?.images ?? []).filter((im) => f.getAll('keepImage').map(String).includes(im.src));
+    const order = JSON.parse(g('photoOrder') || '[]') as string[];
+    const images = order
+      .map((t) => (t.startsWith('e:') ? kept.find((im) => im.src === t.slice(2)) : added[Number(t.slice(2))]))
+      .filter((x): x is ProductImage => Boolean(x));
+    const mode = g('pmode');
+    const personalization =
+      mode === 'letter'
+        ? { mode: 'letter' as const, label: { es: g('plabel_es') || '¿Qué letra quieres?', ca: g('plabel_ca') || 'Quina lletra vols?' }, help: L1('phelp') }
+        : mode === 'idea'
+          ? { mode: 'idea' as const, label: { es: g('plabel_es') || 'Cuéntanos tu idea', ca: g('plabel_ca') || "Explica'ns la teva idea" }, help: L1('phelp'), maxLength: Math.max(20, Math.min(1000, Number(g('pmax')) || 300)) }
+          : { mode: 'none' as const };
+    const badge = L1('badge');
+    const fields = {
+      name,
+      shortDescription: L1('short'),
+      description: L1('description'),
+      badge: badge.es ? badge : null,
       priceCents: price,
+      categoryId: g('categoryId') || null,
+      images,
+      personalization,
       active: f.get('active') === 'on',
-      featured: f.get('featured') === 'on'
-    });
-    for (const v of live.variants.filter((x) => x.productId === id)) {
-      const k = `v_${v.id}`;
-      if (f.get(`${k}_delete`) === 'on' && live.variants.filter((x) => x.productId === id).length > 1) {
-        live.variants = live.variants.filter((x) => x.id !== v.id);
-        continue;
-      }
-      const es = g(`${k}_es`);
-      const ca = g(`${k}_ca`);
-      v.name = es || ca ? { es: es || ca, ca: ca || es } : null;
-      const st = g(`${k}_stock`);
-      v.stock = st === '' ? null : Math.max(0, Math.floor(Number(st)));
-      v.color = colorFromForm(g, String(v.id));
+      featured: f.get('featured') === 'on',
+      sort: Number(g('sort')) || 0
+    };
+    let pid = p?.id;
+    if (p) Object.assign(live.products.find((x) => x.id === p.id)!, fields);
+    else {
+      pid = nextId();
+      const slug = name.es.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+      live.products.push({ id: pid, slug: `${slug}-${pid}`, ref: g('ref'), details: [], ...fields });
     }
-    if (g('new_es') || g('new_ca')) {
-      live.variants.push({ id: nextId(), productId: id, name: { es: g('new_es') || g('new_ca'), ca: g('new_ca') || g('new_es') }, color: colorFromForm(g, 'new'), sku: '', stock: g('new_stock') === '' ? null : Math.max(0, Number(g('new_stock'))), priceCents: null, active: true, sort: 99 });
+    // Colors: mateixos camps que al tauler real.
+    const keys = [...f.keys()].map((k) => k.match(/^v_(\w+)_present$/)?.[1]).filter((k): k is string => Boolean(k));
+    let sort = 0;
+    for (const k of keys) {
+      const remove = f.get(`v_${k}_delete`) === 'on';
+      const nm = { es: g(`v_${k}_name_es`) || g(`v_${k}_name_ca`), ca: g(`v_${k}_name_ca`) || g(`v_${k}_name_es`) };
+      const st = g(`v_${k}_stock`);
+      const row = { name: nm.es ? nm : null, color: colorFromForm(g, k), stock: st === '' ? null : Math.max(0, Math.floor(Number(st))), active: true, sort: ++sort };
+      if (k.startsWith('new')) {
+        if (!remove && (row.name || row.stock !== null)) live.variants.push({ id: nextId(), productId: pid!, sku: '', priceCents: null, ...row });
+      } else if (remove) live.variants = live.variants.filter((v) => v.id !== Number(k));
+      else Object.assign(live.variants.find((v) => v.id === Number(k)) ?? {}, row);
     }
+    if (!live.variants.some((v) => v.productId === pid)) live.variants.push({ id: nextId(), productId: pid!, name: null, color: null, sku: '', stock: null, priceCents: null, active: true, sort: 1 });
     save();
-    setMsg({ text: 'Canvis desats. Ja es veuen a la botiga.' });
+    navigate(`/admin/productes/${pid}`);
+    setMsg('Canvis desats. Ja es veuen a la botiga.');
   };
-  const Bi = ({ name, label, value, area = false }: { name: string; label: string; value: { es: string; ca: string }; area?: boolean }) => (
-    <div className="ad-row ad-row--2">
-      {(['es', 'ca'] as const).map((l) => (
-        <div className="lp-field" key={l}>
-          <label htmlFor={`${name}_${l}`}>
-            {label}
-            <span className="ad-lang">{l.toUpperCase()}</span>
-          </label>
-          {area ? <textarea className="lp-textarea" id={`${name}_${l}`} name={`${name}_${l}`} defaultValue={value[l]} /> : <input className="lp-input" id={`${name}_${l}`} name={`${name}_${l}`} defaultValue={value[l]} />}
-        </div>
-      ))}
-    </div>
-  );
+
   return (
     <>
       <div className="ad-head">
@@ -964,110 +991,19 @@ function ProductEdit({ id }: { id: number }) {
               ← Productes
             </Link>
           </p>
-          <h1>{loc(p.name, 'ca')}</h1>
+          <h1>{p ? loc(p.name, 'ca') : 'Nou producte'}</h1>
+          {!p ? <p>Quatre passos: fotos, nom i preu, colors i descripció. A la dreta veus com quedarà.</p> : null}
         </div>
-        <Link className="lp-link" href={path('ca', 'productos', p.slug)}>
-          Veure a la botiga
-        </Link>
       </div>
-      <Flash msg={msg.text} error={msg.error} />
-      <form className="ad-grid ad-grid--2" onSubmit={submit} key={p.id + JSON.stringify(variants.map((v) => v.id))}>
-        <div className="ad-grid" style={{ alignContent: 'start' }}>
-          <section className="ad-card ad-form">
-            <h2>Fitxa</h2>
-            <Bi name="name" label="Nom" value={p.name} />
-            <Bi name="short" label="Frase curta (targeta)" value={p.shortDescription} />
-            <Bi name="description" label="Descripció" value={p.description} area />
-          </section>
-          {p.personalization.mode === 'none' ? (
-            <section className="ad-card ad-form">
-              <h2>Models i estoc</h2>
-              <p className="ad-muted">Cada fila és un color que la clienta pot triar, amb el to que es veu a la foto. Estoc buit = sense control.</p>
-              <div className="ad-variants">
-                {variants.map((v) => (
-                  <div className="ad-variant" key={v.id} style={{ gridTemplateColumns: undefined }}>
-                    <div className="lp-field">
-                      <label htmlFor={`v_${v.id}_es`}>
-                        Model<span className="ad-lang">ES</span>
-                      </label>
-                      <input className="lp-input" id={`v_${v.id}_es`} name={`v_${v.id}_es`} defaultValue={v.name?.es ?? ''} placeholder="Sense nom" />
-                    </div>
-                    <div className="lp-field">
-                      <label htmlFor={`v_${v.id}_ca`}>
-                        Model<span className="ad-lang">CA</span>
-                      </label>
-                      <input className="lp-input" id={`v_${v.id}_ca`} name={`v_${v.id}_ca`} defaultValue={v.name?.ca ?? ''} />
-                    </div>
-                    <div className="lp-field">
-                      <label htmlFor={`v_${v.id}_stock`}>Estoc</label>
-                      <input className="lp-input" id={`v_${v.id}_stock`} name={`v_${v.id}_stock`} type="number" min={0} defaultValue={v.stock ?? ''} placeholder="∞" />
-                    </div>
-                    <VariantColor k={String(v.id)} color={v.color} />
-                    <label className="lp-check ad-danger" style={{ fontSize: 13, paddingBottom: 10 }}>
-                      <input type="checkbox" name={`v_${v.id}_delete`} /> Elimina
-                    </label>
-                  </div>
-                ))}
-                <div className="ad-variant">
-                  <div className="lp-field">
-                    <label htmlFor="new_es">
-                      Model nou<span className="ad-lang">ES</span>
-                    </label>
-                    <input className="lp-input" id="new_es" name="new_es" placeholder="Per exemple, Negro" />
-                  </div>
-                  <div className="lp-field">
-                    <label htmlFor="new_ca">
-                      Model nou<span className="ad-lang">CA</span>
-                    </label>
-                    <input className="lp-input" id="new_ca" name="new_ca" placeholder="Per exemple, Negre" />
-                  </div>
-                  <div className="lp-field">
-                    <label htmlFor="new_stock">Estoc</label>
-                    <input className="lp-input" id="new_stock" name="new_stock" type="number" min={0} placeholder="∞" />
-                  </div>
-                  <VariantColor k="new" color={null} />
-                </div>
-              </div>
-            </section>
-          ) : (
-            <section className="ad-card">
-              <h2>Personalització</h2>
-              <p className="ad-muted">Aquest producte es ven per sol·licitud ({p.personalization.mode === 'letter' ? 'una lletra' : 'idea lliure'}): no va a la cistella.</p>
-            </section>
-          )}
-        </div>
-        <div className="ad-grid" style={{ alignContent: 'start' }}>
-          <section className="ad-card ad-form">
-            <h2>Venda</h2>
-            <div className="lp-field">
-              <label htmlFor="price">Preu (€, impostos inclosos)</label>
-              <input className="lp-input" id="price" name="price" inputMode="decimal" defaultValue={eurInput(p.priceCents)} />
-            </div>
-            <label className="lp-check">
-              <input type="checkbox" name="active" defaultChecked={p.active} /> Visible a la botiga
-            </label>
-            <label className="lp-check">
-              <input type="checkbox" name="featured" defaultChecked={p.featured} /> Destacat a la portada
-            </label>
-          </section>
-          <section className="ad-card">
-            <h2>Fotos</h2>
-            <div className="ad-images">
-              {p.images.map((im) => (
-                <div className="ad-image" key={im.src}>
-                  <img src={im.src} alt="" />
-                </div>
-              ))}
-            </div>
-            <p className="ad-muted">A la botiga real es poden pujar fotos noves des d’aquí. A la demo només es mostren.</p>
-          </section>
-          <div className="ad-actions">
-            <button className="lp-btn lp-btn--lg" type="submit">
-              Desa el producte
-            </button>
-          </div>
-        </div>
-      </form>
+      <Flash msg={msg} />
+      <ProductEditor
+        key={`${p?.id ?? 'nou'}-${variants.map((v) => v.id).join('.')}-${p?.images.length ?? 0}`}
+        product={p ? { ...p, badge: p.badge ?? null } : null}
+        variants={variants}
+        categories={db.categories}
+        onSave={onSave}
+        viewHref={p ? `/es/productos/${p.slug}` : undefined}
+      />
     </>
   );
 }

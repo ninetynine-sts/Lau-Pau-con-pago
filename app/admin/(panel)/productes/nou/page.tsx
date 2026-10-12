@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { getCategories } from '@/lib/shop';
-import { ProductForm } from '@/components/admin-product-form';
+import { ProductEditor } from '@/components/product-editor';
+import { saveProduct } from '@/app/actions/admin';
 import { Flash } from '@/components/admin-ui';
 import { requireAdmin } from '@/lib/auth';
 
@@ -19,10 +20,11 @@ export default async function NewProduct({ searchParams }: { searchParams: Promi
             <Link className="lp-link" href="/admin/productes">← Productes</Link>
           </p>
           <h1>Nou producte</h1>
+          <p>Quatre passos: fotos, nom i preu, colors i descripció. A la dreta veus com quedarà.</p>
         </div>
       </div>
       <Flash e={e} msg={msg} />
-      <ProductForm product={null} variants={[]} categories={categories} />
+      <ProductEditor product={null} variants={[]} categories={categories} onSave={saveProduct} />
     </>
   );
 }

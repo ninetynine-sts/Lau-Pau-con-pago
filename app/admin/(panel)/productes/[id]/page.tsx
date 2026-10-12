@@ -4,7 +4,8 @@ import { asc, eq } from 'drizzle-orm';
 import { db, schema } from '@/lib/db';
 import { getCategories } from '@/lib/shop';
 import { loc } from '@/lib/i18n';
-import { ProductForm } from '@/components/admin-product-form';
+import { ProductEditor } from '@/components/product-editor';
+import { deleteProduct, saveProduct } from '@/app/actions/admin';
 import { Flash } from '@/components/admin-ui';
 import { requireAdmin } from '@/lib/auth';
 
@@ -32,11 +33,24 @@ export default async function EditProduct({ params, searchParams }: { params: Pr
         </div>
       </div>
       <Flash ok={ok} e={e} msg={msg} />
-      <ProductForm
+      <ProductEditor
+        key={p.updatedAt?.toString()}
         product={{ ...p, badge: p.badge ?? null }}
         variants={variants.map((v) => ({ id: v.id, name: v.name ?? null, color: v.color ?? null, sku: v.sku, stock: v.stock, priceCents: v.priceCents, active: v.active }))}
         categories={categories}
+        onSave={saveProduct}
+        viewHref={`/es/productos/${p.slug}`}
       />
+      <form className="ad-card ad-form" action={deleteProduct} style={{ maxWidth: 560 }}>
+        <h2>Eliminar el producte</h2>
+        <p className="ad-muted">Si només el vols amagar, fes servir «Desa i amaga’l de la botiga». Eliminar-lo no esborra les comandes antigues.</p>
+        <input type="hidden" name="id" value={p.id} />
+        <div>
+          <button className="lp-btn ad-btn-danger" type="submit">
+            Elimina’l definitivament
+          </button>
+        </div>
+      </form>
     </>
   );
 }
