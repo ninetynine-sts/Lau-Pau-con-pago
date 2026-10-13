@@ -62,9 +62,10 @@ guardan en la tabla `email_log`.
    - Build: `npm run build`
    - Start: `npm start` (aplica migraciones y arranca)
 4. Variables de entorno (ver `.env.example`): como mínimo `SITE_URL`, `DATABASE_URL`,
-   `ADMIN_EMAIL`, `ADMIN_PASSWORD`. Después, las de Redsys, Resend y R2.
+   `ADMIN_PATH`, `ADMIN_EMAIL`, `ADMIN_PASSWORD`. Después, las de Redsys, Resend y R2.
 5. Conecta el dominio y comprueba que `https://tudominio/es` carga.
-6. Entra en `https://tudominio/admin` con la cuenta de `ADMIN_EMAIL`.
+6. Abre `https://tudominio/<ADMIN_PATH>` y entra con la cuenta de `ADMIN_EMAIL`.
+   (`https://tudominio/admin` a secas responde «página no encontrada»: es lo esperado.)
 
 ### Redsys: qué pedir y configurar en el banco
 
@@ -84,6 +85,12 @@ producción. Antes de activar producción, el banco suele revisar las páginas l
 lo marcado en amarillo en `lib/legal.ts`.
 
 ### Seguridad: lo que hay que hacer al publicar
+
+- **Entrada oculta al panel** (`ADMIN_PATH`): sin pasar antes por esa dirección secreta,
+  `/admin` no existe para nadie, así que no se puede ni intentar una contraseña. Cada
+  navegador que la abre queda autorizado 90 días; los enlaces de los correos de aviso ya
+  pasan por ella. Si la dirección se filtra, cámbiala en Hostinger y reinicia: todos los
+  navegadores tendrán que volver a entrar por la nueva.
 
 - **Contraseñas del panel**: largas y únicas (mínimo 12 caracteres). Para añadir o cambiar
   una cuenta desde el servidor: `npm run admin:create -- correo@dominio.ad` (pide la

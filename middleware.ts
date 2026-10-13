@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { SEGMENTS_ES, isLang } from './lib/routes';
+import { GATE_COOKIE, GATE_MAX_AGE, adminPath, gateToken, safeAdminNext, sameToken } from './lib/admin-gate';
 
 /**
  * 1. Política de seguridad de contenido (CSP) con un nonce nuevo en cada petición: el
@@ -7,6 +8,8 @@ import { SEGMENTS_ES, isLang } from './lib/routes';
  *    HTML en la página, su script no se ejecutaría.
  * 2. «/» y rutas sin idioma → /es o /ca (preferencia guardada o idioma del navegador).
  * 3. /ca/productes/… → se sirve la página interna /ca/productos/… sin cambiar la URL.
+ * 4. Entrada oculta al panel (ver lib/admin-gate.ts): sin la cookie de acceso, /admin
+ *    responde exactamente como una página que no existe.
  */
 
 const isDev = process.env.NODE_ENV !== 'production';
@@ -80,7 +83,46 @@ function localeResponse(req: NextRequest, requestHeaders: Headers): NextResponse
   return res;
 }
 
-export function middleware(req: NextRequest) {
+/** Respuesta idéntica a la de una dirección inventada (misma página y estado 404). */
+function notFound(req: NextRequest, requestHeaders: Headers): NextResponse {
+  const lang = isLang(req.cookies.get('lp_lang')?.value) ? req.cookies.get('lp_lang')!.value : 'es';
+  const url = req.nextUrl.clone();
+  // Misma forma que el resto de reescrituras de idioma de la web (p. ej. /ca/productes).
+  url.pathname = `/${lang}${req.nextUrl.pathname}`;
+  url.search = '';
+  return NextResponse.rewrite(url, { request: { headers: requestHeaders } });
+}
+
+async function adminGate(req: NextRequest, requestHeaders: Headers): Promise<NextResponse | null> {
+  const secret = adminPath();
+  if (!secret) return null;
+  const first = req.nextUrl.pathname.split('/').filter(Boolean)[0]?.toLowerCase();
+  const token = await gateToken(secret);
+
+  if (first === secret) {
+    const [path, query] = safeAdminNext(req.nextUrl.searchParams.get('next')).split('?');
+    const url = req.nextUrl.clone();
+    url.pathname = path;
+    url.search = query ? `?${query}` : '';
+    const res = NextResponse.redirect(url);
+    res.cookies.set(GATE_COOKIE, token, {
+      path: '/admin',
+      maxAge: GATE_MAX_AGE,
+      httpOnly: true,
+      // lax: los enlaces de los correos de aviso (abiertos desde Gmail, etc.) siguen funcionando.
+      sameSite: 'lax',
+      secure: !isDev
+    });
+    res.headers.set('Cache-Control', 'no-store');
+    res.headers.set('Referrer-Policy', 'no-referrer');
+    return res;
+  }
+
+  if (first === 'admin' && !sameToken(req.cookies.get(GATE_COOKIE)?.value, token)) return notFound(req, requestHeaders);
+  return null;
+}
+
+export async function middleware(req: NextRequest) {
   const nonce = btoa(crypto.randomUUID());
   const csp = contentSecurityPolicy(nonce);
 
@@ -89,7 +131,7 @@ export function middleware(req: NextRequest) {
   requestHeaders.set('x-nonce', nonce);
   requestHeaders.set('content-security-policy', csp);
 
-  const res = localeResponse(req, requestHeaders);
+  const res = (await adminGate(req, requestHeaders)) ?? localeResponse(req, requestHeaders);
   res.headers.set('Content-Security-Policy', csp);
   return res;
 }

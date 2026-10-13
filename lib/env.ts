@@ -52,8 +52,18 @@ export const env = {
     publicUrl: opt('R2_PUBLIC_URL')?.replace(/\/+$/, '')
   },
 
-  uploadDir: opt('UPLOAD_DIR') ?? './uploads'
+  uploadDir: opt('UPLOAD_DIR') ?? './uploads',
+
+  /** Dirección secreta de entrada al panel (ver lib/admin-gate.ts). */
+  adminPath: opt('ADMIN_PATH')?.toLowerCase()
 };
+
+/** Enlace al panel para correos: pasa por la entrada secreta si está configurada. */
+export function adminUrl(path: string): string {
+  return env.adminPath
+    ? `${env.siteUrl}/${env.adminPath}?next=${encodeURIComponent(path)}`
+    : `${env.siteUrl}${path}`;
+}
 
 /*
  * Comprobaciones al arrancar en producción (no durante «next build» ni en la demo del navegador).
@@ -70,6 +80,11 @@ if (runtimeProd) {
       `[config] Redsys no está listo para cobrar de verdad (${
         missing.length ? `faltan ${missing.join(', ')}` : publicKey ? 'se usa la clave pública de pruebas' : 'REDSYS_ENV no es production'
       }). Configura las credenciales del banco o, solo para un entorno de pruebas, REDSYS_ALLOW_TEST=1.`
+    );
+  }
+  if (!env.adminPath || !/^[a-z0-9-]{24,64}$/.test(env.adminPath)) {
+    throw new Error(
+      '[config] Falta ADMIN_PATH (o no es válida): la entrada secreta al panel. Usa entre 24 y 64 letras minúsculas, números o guiones, p. ej. el resultado de «node -e "console.log(crypto.randomUUID())"».'
     );
   }
   if (!env.siteUrl.startsWith('https://') && !/^http:\/\/localhost(:\d+)?$/.test(env.siteUrl)) throw new Error('[config] SITE_URL debe empezar por https:// en producción.');

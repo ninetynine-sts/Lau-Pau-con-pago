@@ -2,7 +2,7 @@
  * Plantillas de correo. A clientes: en su idioma. A la tienda: en catalán.
  */
 import 'server-only';
-import { env } from './env';
+import { adminUrl, env } from './env';
 import { formatDate, formatPrice, loc, orderNumber, t } from './i18n';
 import { path, type Lang } from './routes';
 import type { Address, ItemPersonalization, Localized } from './db/schema';
@@ -258,7 +258,7 @@ export function storeNewOrderMail(o: OrderForMail, to: string) {
     `<p style="margin:0 0 6px;font-weight:700;">${o.shippingAddress ? 'Enviament a' : 'Recollida'}</p>` +
     addressBlock(o.shippingAddress, loc(o.shippingName, 'ca')) +
     (o.customerNotes ? p(`<b>Notes de la clienta:</b> ${esc(o.customerNotes)}`) : '') +
-    button(`${env.siteUrl}/admin/comandes/${o.id}`, 'Obre la comanda al tauler');
+    button(adminUrl(`/admin/comandes/${o.id}`), 'Obre la comanda al tauler');
   return { to, subject: `Lau&Pau · Comanda nova ${n}`, html: layout(body, 'ca'), replyTo: o.email };
 }
 
@@ -267,7 +267,7 @@ export function storeNewRequestMail(r: RequestForMail & { id: number }, to: stri
     h1('Sol·licitud de personalització nova') +
     p(`${esc(r.name)} · ${esc(r.email)}${r.phone ? ` · ${esc(r.phone)}` : ''}`) +
     requestSummary(r, 'ca') +
-    button(`${env.siteUrl}/admin/sollicituds/${r.id}`, 'Revisa-la i envia el preu');
+    button(adminUrl(`/admin/sollicituds/${r.id}`), 'Revisa-la i envia el preu');
   return { to, subject: 'Lau&Pau · Sol·licitud de personalització nova', html: layout(body, 'ca'), replyTo: r.email };
 }
 
@@ -278,6 +278,6 @@ export function storePaymentAlertMail(to: string, orderId: number, reason: strin
     h1(`Revisa el pagament de la comanda ${n}`) +
     `<p style="margin:0 0 14px;padding:12px 16px;background:#FBEAE7;color:#9B2C1E;border-radius:12px;"><b>Atenció:</b> ${esc(reason)}</p>` +
     p(`Import cobrat per Redsys: <b>${formatPrice(amountCents, 'ca')}</b>. La comanda no s’ha marcat com a pagada automàticament.`) +
-    button(`${env.siteUrl}/admin/comandes/${orderId}`, 'Obre la comanda al tauler');
+    button(adminUrl(`/admin/comandes/${orderId}`), 'Obre la comanda al tauler');
   return { to, subject: `Lau&Pau · Revisa el pagament ${n}`, html: layout(body, 'ca') };
 }
