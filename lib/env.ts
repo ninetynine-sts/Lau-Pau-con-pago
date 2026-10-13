@@ -82,6 +82,13 @@ if (runtimeProd) {
       }). Configura las credenciales del banco o, solo para un entorno de pruebas, REDSYS_ALLOW_TEST=1.`
     );
   }
+  // En Hostinger cada despliegue vacía los archivos de la app: sin base de datos externa se
+  // perderían pedidos y clientes, y sin R2 las fotos subidas desde el panel.
+  if (!env.databaseUrl) throw new Error('[config] Falta DATABASE_URL (Neon u otro PostgreSQL). Sin ella los datos se borrarían en cada despliegue.');
+  const r2Ready = Boolean(env.r2.accountId && env.r2.accessKeyId && env.r2.secretAccessKey && env.r2.bucket && env.r2.publicUrl);
+  if (!r2Ready && !opt('UPLOAD_DIR')?.startsWith('/')) {
+    throw new Error('[config] Faltan las variables R2_* (fotos del panel). Sin R2 las fotos subidas se perderían al redesplegar. (Solo en un servidor propio: UPLOAD_DIR con ruta absoluta y persistente.)');
+  }
   if (!env.adminPath || !/^[a-z0-9-]{24,64}$/.test(env.adminPath)) {
     throw new Error(
       '[config] Falta ADMIN_PATH (o no es válida): la entrada secreta al panel. Usa entre 24 y 64 letras minúsculas, números o guiones, p. ej. el resultado de «node -e "console.log(crypto.randomUUID())"».'

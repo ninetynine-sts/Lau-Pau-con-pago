@@ -61,8 +61,13 @@ guardan en la tabla `email_log`.
    - Versión de Node: **20 o superior**
    - Build: `npm run build`
    - Start: `npm start` (aplica migraciones y arranca)
-4. Variables de entorno (ver `.env.example`): como mínimo `SITE_URL`, `DATABASE_URL`,
-   `ADMIN_PATH`, `ADMIN_EMAIL`, `ADMIN_PASSWORD`. Después, las de Redsys, Resend y R2.
+4. Variables de entorno (ver `.env.example`). Obligatorias (sin ellas el servidor no
+   arranca, a propósito): `SITE_URL`, `DATABASE_URL`, `ADMIN_PATH`, las de Redsys y las
+   `R2_*` (Hostinger vacía los archivos de la app en cada despliegue: sin base de datos
+   externa y sin R2 se perderían pedidos y fotos). Además `ADMIN_EMAIL`/`ADMIN_PASSWORD`
+   para la primera cuenta y `RESEND_API_KEY` para los correos.
+   Si Hostinger arranca la app sin `npm start`, las migraciones se aplican igualmente al
+   arrancar.
 5. Conecta el dominio y comprueba que `https://tudominio/es` carga.
 6. Abre `https://tudominio/<ADMIN_PATH>` y entra con la cuenta de `ADMIN_EMAIL`.
    (`https://tudominio/admin` a secas responde «página no encontrada»: es lo esperado.)
