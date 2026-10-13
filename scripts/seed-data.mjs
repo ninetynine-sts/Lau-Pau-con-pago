@@ -3,10 +3,13 @@
  * y unos métodos de envío de ejemplo que hay que revisar desde el panel.
  */
 
+import { newCategories, newProducts } from './seed-products-2026-10.mjs';
+
 export const categories = [
   { id: 'textil', name: { es: 'Textil', ca: 'Tèxtil' }, sort: 1 },
   { id: 'accesorios', name: { es: 'Accesorios', ca: 'Accessoris' }, sort: 2 },
-  { id: 'personalizacion', name: { es: 'Personalización', ca: 'Personalització' }, sort: 3 }
+  { id: 'personalizacion', name: { es: 'Personalización', ca: 'Personalització' }, sort: 3 },
+  ...newCategories
 ];
 
 const img = (file, es, ca, width, height) => ({
@@ -169,7 +172,8 @@ export const products = [
         ca: 'Un nom, una data, una frase… Revisem la teva idea i et confirmem opcions i preu.'
       }
     }
-  }
+  },
+  ...newProducts
 ];
 
 /**

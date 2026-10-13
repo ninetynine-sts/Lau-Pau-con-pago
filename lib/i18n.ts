@@ -100,6 +100,7 @@ const es = {
   product: {
     color: 'Color',
     colorsCount: (n: number) => (n === 1 ? '1 color' : `${n} colores`),
+    photo: 'Ver foto {n}',
     colorRequired: 'Elige un color.',
     home: 'Inicio',
     products: 'Productos',
@@ -434,6 +435,7 @@ const ca: Dict = {
   product: {
     color: 'Color',
     colorsCount: (n: number) => (n === 1 ? '1 color' : `${n} colors`),
+    photo: 'Veure la foto {n}',
     colorRequired: 'Tria un color.',
     home: 'Inici',
     products: 'Productes',

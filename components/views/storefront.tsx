@@ -10,6 +10,7 @@ import { ProductCard } from '@/components/product-card';
 import { CatalogFilters } from '@/components/catalog-filters';
 import { AddToCart } from '@/components/add-to-cart';
 import { RequestForm } from '@/components/request-form';
+import { ProductGallery } from '@/components/product-gallery';
 import { hasColors, isPersonalizable, type CatalogProduct, type Category } from '@/lib/catalog';
 import { loc, t } from '@/lib/i18n';
 import { path, type Lang } from '@/lib/routes';
@@ -382,7 +383,7 @@ export function ProductView({ lang, p, defaults }: { lang: Lang; p: CatalogProdu
           </ol>
 
           <div className="lp-detail">
-            <Figure p={p} lang={lang} className="lp-detail__figure lp-in" eager />
+            <ProductGallery p={p} lang={lang} className="lp-detail__figure lp-in" eager label={d.product.photo} />
 
             <div className="lp-detail__info">
               {p.categoryName ? (

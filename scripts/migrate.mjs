@@ -8,6 +8,7 @@
 import { existsSync, mkdirSync, readFileSync } from 'node:fs';
 import bcrypt from 'bcryptjs';
 import * as seed from './seed-data.mjs';
+import { COLLECTION_KEY, newCategories, newProducts } from './seed-products-2026-10.mjs';
 
 // Carga .env si existe (en Hostinger las variables vienen del panel).
 if (existsSync('.env')) {
@@ -58,26 +59,7 @@ async function seedIfEmpty(q) {
     await q('insert into categories (id, name, sort) values ($1, $2, $3)', [c.id, j(c.name), c.sort]);
   }
 
-  for (const p of seed.products) {
-    const [row] = await q(
-      `insert into products (slug, ref, category_id, name, short_description, description, badge,
-         price_cents, images, personalization, details, featured, sort)
-       values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13) returning id`,
-      [
-        p.slug, p.ref, p.categoryId, j(p.name), j(p.shortDescription), j(p.description),
-        p.badge ? j(p.badge) : null, p.priceCents, j(p.images),
-        j(p.personalization ?? { mode: 'none' }), j(p.details ?? []), !!p.featured, p.sort
-      ]
-    );
-    const vs = p.variants ?? [{ name: null, stock: null }];
-    let i = 0;
-    for (const v of vs) {
-      i += 1;
-      await q('insert into variants (product_id, name, color, sku, stock, sort) values ($1,$2,$3,$4,$5,$6)', [
-        row.id, v.name ? j(v.name) : null, v.color ?? null, `${p.ref}${vs.length > 1 ? `-${i}` : ''}`, v.stock ?? null, i
-      ]);
-    }
-  }
+  for (const p of seed.products) await insertProduct(q, p);
 
   for (const s of seed.shippingMethods) {
     await q(
@@ -90,7 +72,52 @@ async function seedIfEmpty(q) {
   for (const [key, value] of Object.entries(seed.settings)) {
     await q('insert into settings (key, value) values ($1, $2) on conflict (key) do nothing', [key, j(value)]);
   }
+  // El catálogo inicial ya incluye la colección nueva: se marca como añadida.
+  await q('insert into settings (key, value) values ($1, $2) on conflict (key) do nothing', [COLLECTION_KEY, j(true)]);
   return true;
+}
+
+async function insertProduct(q, p) {
+  const [row] = await q(
+    `insert into products (slug, ref, category_id, name, short_description, description, badge,
+       price_cents, images, personalization, details, featured, sort)
+     values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13) returning id`,
+    [
+      p.slug, p.ref, p.categoryId, j(p.name), j(p.shortDescription), j(p.description),
+      p.badge ? j(p.badge) : null, p.priceCents, j(p.images),
+      j(p.personalization ?? { mode: 'none' }), j(p.details ?? []), !!p.featured, p.sort
+    ]
+  );
+  const vs = p.variants ?? [{ name: null, stock: null }];
+  let i = 0;
+  for (const v of vs) {
+    i += 1;
+    await q('insert into variants (product_id, name, color, sku, stock, sort) values ($1,$2,$3,$4,$5,$6)', [
+      row.id, v.name ? j(v.name) : null, v.color ?? null, `${p.ref}${vs.length > 1 ? `-${i}` : ''}`, v.stock ?? null, i
+    ]);
+  }
+}
+
+/**
+ * Colección nueva para tiendas ya en marcha. Se añade UNA sola vez (queda anotado en
+ * settings), así lo que se borre después desde el panel no vuelve a aparecer. Nunca
+ * toca productos existentes: si el slug ya existe, se salta.
+ */
+async function addCollection(q) {
+  const done = await q('select 1 from settings where key = $1', [COLLECTION_KEY]);
+  if (done.length) return 0;
+  for (const c of newCategories) {
+    await q('insert into categories (id, name, sort) values ($1, $2, $3) on conflict (id) do nothing', [c.id, j(c.name), c.sort]);
+  }
+  let added = 0;
+  for (const p of newProducts) {
+    const exists = await q('select 1 from products where slug = $1', [p.slug]);
+    if (exists.length) continue;
+    await insertProduct(q, p);
+    added += 1;
+  }
+  await q('insert into settings (key, value) values ($1, $2) on conflict (key) do nothing', [COLLECTION_KEY, j(true)]);
+  return added;
 }
 
 /**
@@ -151,6 +178,8 @@ try {
   const seeded = await seedIfEmpty(conn.query);
   const colored = seeded ? 0 : await backfillColors(conn.query);
   if (colored) console.log(`[db] colores añadidos a ${colored} productos del catálogo inicial`);
+  const added = seeded ? 0 : await addCollection(conn.query);
+  if (added) console.log(`[db] colección nueva: ${added} productos añadidos`);
   const admin = await ensureAdmin(conn.query);
   console.log(`[db] migraciones aplicadas${seeded ? ' · catálogo inicial cargado' : ''}${admin ? ` · admin creado: ${admin}` : ''}`);
 } finally {

@@ -945,6 +945,22 @@ body::after {
 }
 .lp-detail__figure img[data-loaded='true'] { opacity: 1; transform: scale(1); }
 
+/* Galería de la ficha: miniaturas bajo la foto principal. */
+.lp-gallery { display: grid; gap: 12px; align-content: start; }
+.lp-gallery__main { margin: 0; }
+.lp-gallery__thumbs { display: flex; flex-wrap: wrap; gap: 8px; }
+.lp-detail__figure .lp-gallery__thumb img { padding: 0; opacity: 1; transform: none; object-fit: cover; }
+.lp-gallery__thumb {
+  inline-size: 64px; block-size: 64px; padding: 0; border: 0; cursor: pointer;
+  border-radius: var(--r-core); overflow: hidden; background: var(--plate);
+  box-shadow: inset 0 0 0 1px var(--hair);
+  opacity: .62; transition: opacity 200ms var(--ease-out), box-shadow 200ms var(--ease-out);
+}
+.lp-gallery__thumb:hover { opacity: .9; }
+.lp-gallery__thumb[aria-pressed='true'] { opacity: 1; box-shadow: inset 0 0 0 2px var(--primary); }
+.lp-gallery__thumb:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.lp-gallery__thumb img { width: 100%; height: 100%; display: block; }
+
 .lp-detail__info { display: grid; gap: 22px; align-content: start; min-width: 0; }
 
 /* Variante tarjeta, para la página de personalización. */
