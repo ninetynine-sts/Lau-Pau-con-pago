@@ -43,6 +43,31 @@ function contentSecurityPolicy(nonce: string): string {
   ].join('; ');
 }
 
+/** Rutas típicas de Shopify → rutas de esta tienda. null si no es una ruta de Shopify. */
+function shopifyRedirect(parts: string[]): string | null {
+  // Shopify también sirve /es/products/…, /ca/collections/… con idioma delante.
+  const lang = isLang(parts[0]) ? parts[0] : 'es';
+  const p = isLang(parts[0]) ? parts.slice(1) : parts;
+  const cat = lang === 'ca' ? '/ca/productes' : '/es/productos';
+  switch (p[0]) {
+    case 'products':
+      return p[1] && /^[a-z0-9-]{1,120}$/.test(p[1]) ? `${cat}/${p[1]}` : cat;
+    case 'collections':
+      // /collections/x/products/slug → la ficha; si no, el catálogo.
+      return p[2] === 'products' && p[3] && /^[a-z0-9-]{1,120}$/.test(p[3]) ? `${cat}/${p[3]}` : cat;
+    case 'cart':
+      return lang === 'ca' ? '/ca/cistella' : '/es/carrito';
+    case 'account':
+      return lang === 'ca' ? '/ca/compte' : '/es/cuenta';
+    case 'pages':
+    case 'blogs':
+    case 'search':
+      return `/${lang}`;
+    default:
+      return null;
+  }
+}
+
 function localeResponse(req: NextRequest, requestHeaders: Headers): NextResponse {
   const { pathname } = req.nextUrl;
   const parts = pathname.split('/').filter(Boolean);
@@ -50,6 +75,16 @@ function localeResponse(req: NextRequest, requestHeaders: Headers): NextResponse
 
   // Panel, API y fotos: sin idioma.
   if (parts[0] === 'admin' || parts[0] === 'api' || parts[0] === 'media') return pass();
+
+  // Direcciones de la antigua tienda en Shopify (Google, Instagram, enlaces guardados):
+  // redirección permanente a su equivalente, para no perder visitas ni posicionamiento.
+  const legacy = shopifyRedirect(parts);
+  if (legacy) {
+    const url = req.nextUrl.clone();
+    url.pathname = legacy;
+    url.search = '';
+    return NextResponse.redirect(url, 301);
+  }
 
   if (!parts.length || !isLang(parts[0])) {
     const saved = req.cookies.get('lp_lang')?.value;
