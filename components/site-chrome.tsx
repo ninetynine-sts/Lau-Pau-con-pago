@@ -18,7 +18,18 @@ export function Header({ lang, loggedIn }: { lang: Lang; loggedIn: boolean }) {
   return <SiteHeader lang={lang} loggedIn={loggedIn} items={items} />;
 }
 
-export function Footer({ lang, storeEmail, instagram }: { lang: Lang; storeEmail: string; instagram: string }) {
+export function Footer({
+  lang,
+  storeEmail,
+  instagram,
+  legal: owner
+}: {
+  lang: Lang;
+  storeEmail: string;
+  instagram: string;
+  /** Titular i NRT (identitat del venedor, exigida pel banc). */
+  legal?: { company: string; nrt: string };
+}) {
   const d = t(lang);
   const nav = [
     { href: path(lang, 'productos'), label: d.nav.products },
@@ -92,7 +103,12 @@ export function Footer({ lang, storeEmail, instagram }: { lang: Lang; storeEmail
           <span>Pau</span>
         </p>
         <p className="lp-footer__legal">
-          <span>© {new Date().getFullYear()} Lau&amp;Pau · Andorra</span>
+          <span>
+            © {new Date().getFullYear()} Lau&amp;Pau
+            {owner?.company ? ` · ${owner.company}` : ''}
+            {owner?.nrt ? ` · NRT ${owner.nrt}` : ''} · Andorra
+          </span>
+          <span>{d.footer.payments}</span>
           <span>{d.footer.taxes}</span>
         </p>
       </div>

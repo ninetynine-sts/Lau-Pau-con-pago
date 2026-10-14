@@ -43,7 +43,8 @@ const es = {
     navigation: 'Navegación',
     legal: 'Información legal',
     taxes: 'Precios con impuestos incluidos.',
-    country: 'Andorra'
+    country: 'Andorra',
+    payments: 'Pago seguro con TPV Virtual · Visa · Mastercard · Bizum · Google Pay'
   },
   legalLinks: {
     notice: 'Aviso legal',
@@ -199,7 +200,7 @@ const es = {
     privacyLink: 'política de privacidad',
     pay: 'Pagar con tarjeta',
     redirecting: 'Te llevamos a la pasarela de pago segura…',
-    secure: 'Pago seguro con tarjeta a través de Redsys. Nunca vemos ni guardamos los datos de tu tarjeta.',
+    secure: 'Pago seguro mediante TPV Virtual (Redsys): Visa y Mastercard, con posibilidad de Bizum y Google Pay. Nunca vemos ni guardamos los datos de tu tarjeta.',
     emptyCart: 'Tu cesta está vacía.',
     errors: {
       required: 'Este campo es obligatorio.',
@@ -378,7 +379,8 @@ const ca: Dict = {
     navigation: 'Navegació',
     legal: 'Informació legal',
     taxes: 'Preus amb impostos inclosos.',
-    country: 'Andorra'
+    country: 'Andorra',
+    payments: 'Pagament segur amb TPV Virtual · Visa · Mastercard · Bizum · Google Pay'
   },
   legalLinks: {
     notice: 'Avís legal',
@@ -534,7 +536,7 @@ const ca: Dict = {
     privacyLink: 'política de privacitat',
     pay: 'Paga amb targeta',
     redirecting: 'Et portem a la passarel·la de pagament segura…',
-    secure: 'Pagament segur amb targeta a través de Redsys. No veiem ni desem mai les dades de la teva targeta.',
+    secure: 'Pagament segur mitjançant TPV Virtual (Redsys): Visa i Mastercard, amb possibilitat de Bizum i Google Pay. No veiem ni desem mai les dades de la teva targeta.',
     emptyCart: 'La teva cistella és buida.',
     errors: {
       required: 'Aquest camp és obligatori.',

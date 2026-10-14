@@ -5,6 +5,7 @@ import { AboutView, CatalogView, HomeView, PersonalizeView, ProductView } from '
 import { path, type Lang } from '@/lib/routes';
 import { t } from '@/lib/i18n';
 import { LEGAL_PAGES, legalDoc, type LegalPage } from '@/lib/legal';
+import type { LegalInfo } from '@/lib/legal-info';
 import { useDB } from '../mock/store';
 import { getProduct, listProducts } from '../mock/shop';
 
@@ -44,7 +45,7 @@ export function About({ lang }: { lang: Lang }) {
 export function Legal({ lang, page }: { lang: Lang; page: string }) {
   const db = useDB();
   if (!LEGAL_PAGES.includes(page as LegalPage)) return <NotFound lang={lang} />;
-  const doc = legalDoc(page as LegalPage, lang, db.settings.storeEmail);
+  const doc = legalDoc(page as LegalPage, lang, db.settings.storeEmail, (db.settings as { legal?: LegalInfo }).legal);
   return (
     <section className="lp-section lp-section--seamless">
       <div className="lp-container lp-stack--lg">

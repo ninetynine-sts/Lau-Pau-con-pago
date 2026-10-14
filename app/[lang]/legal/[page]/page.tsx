@@ -16,8 +16,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function Legal({ params }: Props) {
   const { lang, page } = await params;
   if (!isLang(lang) || !LEGAL_PAGES.includes(page as LegalPage)) notFound();
-  const { storeEmail } = await getSettings();
-  const doc = legalDoc(page as LegalPage, lang, storeEmail);
+  const { storeEmail, legal } = await getSettings();
+  const doc = legalDoc(page as LegalPage, lang, storeEmail, legal);
   return (
     <section className="lp-section lp-section--seamless">
       <div className="lp-container lp-stack--lg">

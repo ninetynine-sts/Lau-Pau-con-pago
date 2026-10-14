@@ -67,7 +67,7 @@ export default async function PublicLayout({ children, params }: { children: Rea
           </a>
           <Header lang={lang} loggedIn={!!user} />
           <main id="contenido">{children}</main>
-          <Footer lang={lang} storeEmail={settings.storeEmail} instagram={settings.instagram} />
+          <Footer lang={lang} storeEmail={settings.storeEmail} instagram={settings.instagram} legal={settings.legal} />
           <CartDrawer lang={lang} />
           <Effects />
         </CartProvider>

@@ -488,6 +488,28 @@ export async function saveStoreSettings(form: FormData) {
   redirect('/admin/configuracio?ok=desat');
 }
 
+export async function saveLegalSettings(form: FormData) {
+  await requireAdmin();
+  const days = Math.round(Number(s(form, 'returnDays', 3)));
+  if (!Number.isFinite(days) || days < 1 || days > 365) redirect('/admin/configuracio?e=devolucio');
+  await saveSettings({
+    legal: {
+      company: s(form, 'company', 160),
+      nrt: s(form, 'nrt', 40),
+      registry: s(form, 'registry', 60),
+      purposeEs: s(form, 'purposeEs', 400),
+      purposeCa: s(form, 'purposeCa', 400),
+      address: s(form, 'address', 240),
+      phone: s(form, 'phone', 40).replace(/[^\d+ ()-]/g, ''),
+      bank: s(form, 'bank', 60),
+      returnDays: days,
+      returnShippingBy: s(form, 'returnShippingBy', 10) === 'store' ? 'store' : 'client'
+    }
+  });
+  revalidatePath('/', 'layout');
+  redirect('/admin/configuracio?ok=desat');
+}
+
 export async function createAdmin(form: FormData) {
   await requireAdmin();
   const email = normalizeEmail(s(form, 'email', 254));

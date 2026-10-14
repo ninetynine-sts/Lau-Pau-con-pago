@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { and, count, desc, eq, gte, inArray, isNotNull, lte, sum } from 'drizzle-orm';
 import { db, schema } from '@/lib/db';
 import { env } from '@/lib/env';
+import { missingLegal } from '@/lib/legal-info';
 import { getSettings } from '@/lib/settings';
 import { r2Enabled } from '@/lib/storage';
 import { loc, orderNumber } from '@/lib/i18n';
@@ -37,6 +38,16 @@ export default async function Dashboard() {
     warnings.push(
       <>
         <b>Revisa els enviaments.</b> Els preus i zones són d’exemple. <Link className="lp-link" href="/admin/enviaments">Obre Enviaments</Link>
+      </>
+    );
+  const legalMissing = missingLegal(settings.legal);
+  if (legalMissing.length)
+    warnings.push(
+      <>
+        <b>Completa les dades legals</b> (les revisa el banc): falten {legalMissing.join(', ')}.{' '}
+        <Link className="lp-link" href="/admin/configuracio#legal">
+          Obre Configuració
+        </Link>
       </>
     );
   if (env.redsys.env !== 'production')
