@@ -58,9 +58,15 @@ export default async function Settings({ searchParams }: { searchParams: Promise
             El banc les revisa abans d’activar el TPV. Surten a l’avís legal, a les condicions de venda i al peu de la web.
             {missing.length ? <> Falten: <b>{missing.join(', ')}</b>.</> : ' Completes.'}
           </p>
-          <div className="lp-field">
-            <label htmlFor="l-company">Raó social o nom i cognoms del titular</label>
-            <input className="lp-input" id="l-company" name="company" defaultValue={l.company} maxLength={160} />
+          <div className="ad-row ad-row--2">
+            <div className="lp-field">
+              <label htmlFor="l-trade">Nom comercial</label>
+              <input className="lp-input" id="l-trade" name="tradeName" defaultValue={l.tradeName} maxLength={120} />
+            </div>
+            <div className="lp-field">
+              <label htmlFor="l-company">Raó social o titular</label>
+              <input className="lp-input" id="l-company" name="company" defaultValue={l.company} maxLength={160} />
+            </div>
           </div>
           <div className="ad-row ad-row--2">
             <div className="lp-field">
@@ -74,11 +80,12 @@ export default async function Settings({ searchParams }: { searchParams: Promise
           </div>
           <div className="lp-field">
             <label htmlFor="l-purpose-ca">Objecte social (català)</label>
-            <input className="lp-input" id="l-purpose-ca" name="purposeCa" defaultValue={l.purposeCa} maxLength={400} placeholder="Comerç al detall d’accessoris i complements" />
+            <textarea className="lp-textarea" id="l-purpose-ca" name="purposeCa" defaultValue={l.purposeCa} maxLength={4000} rows={6} />
           </div>
           <div className="lp-field">
             <label htmlFor="l-purpose-es">Objecte social (castellà)</label>
-            <input className="lp-input" id="l-purpose-es" name="purposeEs" defaultValue={l.purposeEs} maxLength={400} placeholder="Comercio al por menor de accesorios y complementos" />
+            <textarea className="lp-textarea" id="l-purpose-es" name="purposeEs" defaultValue={l.purposeEs} maxLength={4000} rows={6} />
+            <p className="lp-field__help">Cada línia que comença amb «- » surt com a punt d’una llista.</p>
           </div>
           <div className="lp-field">
             <label htmlFor="l-address">Domicili complet</label>

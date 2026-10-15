@@ -5,6 +5,8 @@
  */
 
 export type LegalInfo = {
+  /** Nom comercial registrat (la botiga). La marca de la web és Lau&Pau. */
+  tradeName: string;
   /** Raó social o nom i cognoms de la persona que explota el negoci. */
   company: string;
   nrt: string;
@@ -23,6 +25,7 @@ export type LegalInfo = {
 };
 
 export const EMPTY_LEGAL: LegalInfo = {
+  tradeName: '',
   company: '',
   nrt: '',
   registry: '',

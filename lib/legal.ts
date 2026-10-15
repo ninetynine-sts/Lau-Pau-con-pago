@@ -21,6 +21,27 @@ const JURISDICTION_ES = 'En caso de reclamación entre las dos partes, se tratar
 
 const esc = (v: string) => v.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
+/** Texto de varias líneas → HTML: las líneas que empiezan por «- » forman una lista. */
+function block(text: string): string {
+  const out: string[] = [];
+  let list: string[] = [];
+  const flush = () => {
+    if (list.length) out.push(`<ul>${list.map((l) => `<li>${l}</li>`).join('')}</ul>`);
+    list = [];
+  };
+  for (const raw of text.split(/\r?\n/)) {
+    const line = raw.trim();
+    if (!line) continue;
+    if (/^[-•]\s+/.test(line)) list.push(esc(line.replace(/^[-•]\s+/, '')));
+    else {
+      flush();
+      out.push(`<p>${esc(line)}</p>`);
+    }
+  }
+  flush();
+  return out.join('');
+}
+
 /** Text de pagament (punt 3), també reutilitzat al peu i al pagament. */
 export function paymentText(lang: Lang, bank: string): string {
   const b = bank.trim();
@@ -41,10 +62,9 @@ export function legalDoc(page: LegalPage, lang: Lang, emailRaw: string, info: Le
   const nrt = v(info.nrt, 'NRT');
   const address = v(info.address, ca ? 'Domicili complet, Andorra' : 'Domicilio completo, Andorra');
   const phone = v(info.phone, ca ? 'Telèfon' : 'Teléfono');
-  const purpose = v(
-    ca ? info.purposeCa || info.purposeEs : info.purposeEs || info.purposeCa,
-    ca ? 'Objecte social' : 'Objeto social'
-  );
+  const purposeText = (ca ? info.purposeCa || info.purposeEs : info.purposeEs || info.purposeCa).trim();
+  const purpose = purposeText ? block(purposeText) : `<p><mark>[${ca ? 'Objecte social' : 'Objeto social'}]</mark></p>`;
+  const trade = info.tradeName.trim() ? `${esc(info.tradeName.trim())} (${ca ? 'marca' : 'marca'} Lau&amp;Pau)` : 'Lau&amp;Pau';
   const registry = info.registry.trim() ? esc(info.registry.trim()) : '';
   const days = Math.max(1, Math.round(info.returnDays || 14));
   const tel = info.phone.trim()
@@ -55,25 +75,25 @@ export function legalDoc(page: LegalPage, lang: Lang, emailRaw: string, info: Le
 
   const identity = ca
     ? `<ul>
-<li><b>Nom comercial:</b> Lau&amp;Pau</li>
+<li><b>Nom comercial:</b> ${trade}</li>
 <li><b>Titular:</b> ${company}</li>
 <li><b>NRT:</b> ${nrt}</li>
 ${registry ? `<li><b>Núm. de registre de comerç:</b> ${registry}</li>` : ''}
-<li><b>Objecte social:</b> ${purpose}</li>
 <li><b>Domicili:</b> ${address}</li>
 <li><b>Telèfon:</b> ${tel}</li>
 <li><b>Correu electrònic:</b> ${mail}</li>
-</ul>`
+</ul>
+<h3>Objecte social</h3>${purpose}`
     : `<ul>
-<li><b>Nombre comercial:</b> Lau&amp;Pau</li>
+<li><b>Nombre comercial:</b> ${trade}</li>
 <li><b>Titular:</b> ${company}</li>
 <li><b>NRT:</b> ${nrt}</li>
 ${registry ? `<li><b>N.º de registro de comercio:</b> ${registry}</li>` : ''}
-<li><b>Objeto social:</b> ${purpose}</li>
 <li><b>Domicilio:</b> ${address}</li>
 <li><b>Teléfono:</b> ${tel}</li>
 <li><b>Correo electrónico:</b> ${mail}</li>
-</ul>`;
+</ul>
+<h3>Objeto social</h3>${purpose}`;
 
   const jurisdiction = ca
     ? `<p>Aquestes condicions es regeixen per la legislació del Principat d’Andorra. <b>${JURISDICTION_CA}</b></p>`

@@ -155,6 +155,7 @@
 
 .lp-legal { display: grid; gap: 1.1em; max-width: 72ch; color: var(--label-2); }
 .lp-legal h2 { font-size: 1.35rem; color: var(--label-1); margin-top: .6em; }
+.lp-legal h3 { font-size: 1.05rem; color: var(--label-1); margin: .4em 0 0; }
 .lp-legal ul { margin: 0; padding-left: 1.2em; display: grid; gap: .4em; }
 .lp-legal mark { background: var(--ambar-200); color: var(--cacao-900); padding: 0 .25em; border-radius: 4px; }
 

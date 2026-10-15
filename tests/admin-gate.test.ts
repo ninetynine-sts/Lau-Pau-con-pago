@@ -43,3 +43,20 @@ describe('textos legals exigits pel banc', () => {
     expect(legalDoc('aviso-legal', 'es', 'a@b.ad', info).html).toContain('Lau &lt;b&gt;SL&lt;/b&gt;');
   });
 });
+
+describe('datos legales de la tienda', () => {
+  it('el aviso legal muestra la identidad completa y el objeto social en lista', async () => {
+    // @ts-expect-error módulo .mjs sin tipos
+    const seed = await import('../scripts/seed-data.mjs');
+    for (const lang of ['es', 'ca'] as const) {
+      const html = legalDoc('aviso-legal', lang, 'comercial@exitekta.ad', seed.settings.legal).html;
+      expect(html).toContain('Exit Ekta (marca Lau&amp;Pau)');
+      expect(html).toContain('Exit, SL');
+      expect(html).toContain('L-705840-W');
+      expect(html).toContain('AD500 Andorra la Vella');
+      expect(html).toContain('+376 360 929');
+      expect((html.match(/<li>/g) ?? []).length).toBeGreaterThanOrEqual(14);
+      expect(html).not.toContain('<mark>');
+    }
+  });
+});

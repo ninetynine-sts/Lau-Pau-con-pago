@@ -203,5 +203,19 @@ export const settings = {
   notifyEmail: 'comercial@exitekta.ad',
   instagram: 'lau.and.pau',
   paymentLinkDays: 7,
-  shippingReviewed: false
+  shippingReviewed: false,
+  // Datos legales que facilitó la tienda (Configuració → Dades legals en el panel).
+  legal: {
+    tradeName: 'Exit Ekta',
+    company: 'Exit, SL',
+    nrt: 'L-705840-W',
+    registry: '',
+    purposeCa: "La societat tindrà per objecte:\n- La compra, venda, importació, exportació, distribució i comercialització, tant a l'engròs com al detall, de rellotgeria, bijuteria, accessoris d'aparells electrònics, articles d'esport, calçat, tèxtil, joguines, maletes i articles de viatge.\n- La compra, venda, importació, exportació, distribució i comercialització, tant a l'engròs com al detall, de complements tèxtils i no tèxtils, incloent, entre d'altres, paraigües, bosses, gorres, guants i articles similars.\n- La compra, venda, importació, exportació, distribució i comercialització, tant a l'engròs com al detall, de productes de decoració per a la llar, articles de parament de la llar i de cuina, tèxtil de la llar (incloent, entre d'altres, edredons, llençols, cortines i tovalloles).\n- La compra, venda, importació, exportació, distribució i comercialització, tant a l'engròs com al detall, de petits electrodomèstics.\n- La compra, venda, importació, exportació, distribució i comercialització, tant a l'engròs com al detall, de dolços, llaminadures i altres productes alimentaris envasats.\n- La compra, venda, importació, exportació, distribució i comercialització, tant a l'engròs com al detall, de productes d'higiene, joguines i cura per a animals.\n- La compra, venda, importació, exportació, distribució i comercialització, tant a l'engròs com al detall, de productes sanitaris.\n- Activitats d'intermediació comercial sense predomini de productes.\nLa societat podrà realitzar igualment totes aquelles activitats que tinguin la consideració d'accessòries, derivades o complementàries de l'objecte social anteriorment descrit, així com participar en altres societats amb objecte social idèntic, anàleg o complementari.",
+    purposeEs: "La sociedad tendrá por objeto:\n- La compra, venta, importación, exportación, distribución y comercialización, tanto al por mayor como al por menor, de relojería, bisutería, accesorios de aparatos electrónicos, artículos de deporte, calzado, textil, juguetes, maletas y artículos de viaje.\n- La compra, venta, importación, exportación, distribución y comercialización, tanto al por mayor como al por menor, de complementos textiles y no textiles, incluyendo, entre otros, paraguas, bolsos, gorras, guantes y artículos similares.\n- La compra, venta, importación, exportación, distribución y comercialización, tanto al por mayor como al por menor, de productos de decoración para el hogar, menaje del hogar y de cocina y textil del hogar (incluyendo, entre otros, edredones, sábanas, cortinas y toallas).\n- La compra, venta, importación, exportación, distribución y comercialización, tanto al por mayor como al por menor, de pequeños electrodomésticos.\n- La compra, venta, importación, exportación, distribución y comercialización, tanto al por mayor como al por menor, de dulces, golosinas y otros productos alimentarios envasados.\n- La compra, venta, importación, exportación, distribución y comercialización, tanto al por mayor como al por menor, de productos de higiene, juguetes y cuidado para animales.\n- La compra, venta, importación, exportación, distribución y comercialización, tanto al por mayor como al por menor, de productos sanitarios.\n- Actividades de intermediación comercial sin predominio de productos.\nLa sociedad podrá realizar igualmente todas aquellas actividades que tengan la consideración de accesorias, derivadas o complementarias del objeto social anteriormente descrito, así como participar en otras sociedades con objeto social idéntico, análogo o complementario.",
+    address: 'Av. Príncep Benlloch 89, Local 3 Espai 4, AD500 Andorra la Vella',
+    phone: '+376 360 929',
+    bank: '',
+    returnDays: 14,
+    returnShippingBy: 'client'
+  }
 };

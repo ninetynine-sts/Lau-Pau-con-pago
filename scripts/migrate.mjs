@@ -176,6 +176,12 @@ try {
       where user_id in (select id from users where role = 'admin')`
   );
   const seeded = await seedIfEmpty(conn.query);
+  // Ajustes nuevos para tiendas ya creadas: solo se añaden los que faltan, nunca se pisan.
+  if (!seeded) {
+    for (const [key, value] of Object.entries(seed.settings)) {
+      await conn.query('insert into settings (key, value) values ($1, $2) on conflict (key) do nothing', [key, j(value)]);
+    }
+  }
   const colored = seeded ? 0 : await backfillColors(conn.query);
   if (colored) console.log(`[db] colores añadidos a ${colored} productos del catálogo inicial`);
   const added = seeded ? 0 : await addCollection(conn.query);
