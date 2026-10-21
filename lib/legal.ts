@@ -130,7 +130,7 @@ ${registry ? `<li><b>N.º de registro de comercio:</b> ${registry}</li>` : ''}
     'envios-y-devoluciones': {
       title: 'Envíos y devoluciones',
       html: `<h2>Envíos</h2><p>Los métodos y costes de envío disponibles para tu país se muestran antes de pagar. <mark>Indicar plazos de entrega por destino.</mark></p>
-<p>En envíos fuera de Andorra pueden aplicarse trámites aduaneros e impuestos de importación en destino. <mark>Confirmar quién los asume.</mark></p>
+<p>De momento solo enviamos dentro de Andorra.</p>
 <h2>Plazo de devolución</h2><p>Puedes devolver los productos no personalizados en un plazo de <b>${days} días naturales</b> desde la recepción del pedido, sin usar y en su embalaje original. Para hacerlo, escríbenos a ${mail} indicando el número de pedido. ${returnShipping}</p>
 <p>Los productos personalizados no admiten devolución, salvo defecto o error nuestro.</p>
 <h2>Reembolsos</h2><p>Una vez recibida y revisada la devolución, el reembolso se hace por el mismo medio de pago utilizado en la compra.</p>`
@@ -174,7 +174,7 @@ ${registry ? `<li><b>N.º de registro de comercio:</b> ${registry}</li>` : ''}
     'envios-y-devoluciones': {
       title: 'Enviaments i devolucions',
       html: `<h2>Enviaments</h2><p>Els mètodes i costos d’enviament disponibles per al teu país es mostren abans de pagar. <mark>Indicar terminis de lliurament per destinació.</mark></p>
-<p>En els enviaments fora d’Andorra es poden aplicar tràmits duaners i impostos d’importació a la destinació. <mark>Confirmar qui els assumeix.</mark></p>
+<p>De moment només fem enviaments dins d’Andorra.</p>
 <h2>Termini de devolució</h2><p>Pots tornar els productes no personalitzats en un termini de <b>${days} dies naturals</b> des de la recepció de la comanda, sense fer servir i amb l’embalatge original. Per fer-ho, escriu-nos a ${mail} indicant el número de comanda. ${returnShipping}</p>
 <p>Els productes personalitzats no admeten devolució, tret de defecte o error nostre.</p>
 <h2>Reemborsaments</h2><p>Un cop rebuda i revisada la devolució, el reemborsament es fa pel mateix mitjà de pagament utilitzat en la compra.</p>`

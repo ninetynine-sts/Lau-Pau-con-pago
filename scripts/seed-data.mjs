@@ -190,12 +190,9 @@ export const shippingMethods = [
     name: { es: 'Envío a domicilio en Andorra', ca: 'Enviament a domicili a Andorra' },
     description: { es: '', ca: '' },
     countries: ['AD'], allCountries: false, isPickup: false, priceCents: 400, freeOverCents: 5000, sort: 2
-  },
-  {
-    name: { es: 'Envío a España', ca: 'Enviament a Espanya' },
-    description: { es: '', ca: '' },
-    countries: ['ES'], allCountries: false, isPickup: false, priceCents: 800, freeOverCents: null, sort: 3
   }
+  // De momento solo se envía dentro de Andorra. Para abrir otro país, añadir el método
+  // desde el panel (Enviaments): el país aparece solo en el pago.
 ];
 
 export const settings = {
@@ -212,7 +209,7 @@ export const settings = {
     registry: '',
     purposeCa: "La societat tindrà per objecte:\n- La compra, venda, importació, exportació, distribució i comercialització, tant a l'engròs com al detall, de rellotgeria, bijuteria, accessoris d'aparells electrònics, articles d'esport, calçat, tèxtil, joguines, maletes i articles de viatge.\n- La compra, venda, importació, exportació, distribució i comercialització, tant a l'engròs com al detall, de complements tèxtils i no tèxtils, incloent, entre d'altres, paraigües, bosses, gorres, guants i articles similars.\n- La compra, venda, importació, exportació, distribució i comercialització, tant a l'engròs com al detall, de productes de decoració per a la llar, articles de parament de la llar i de cuina, tèxtil de la llar (incloent, entre d'altres, edredons, llençols, cortines i tovalloles).\n- La compra, venda, importació, exportació, distribució i comercialització, tant a l'engròs com al detall, de petits electrodomèstics.\n- La compra, venda, importació, exportació, distribució i comercialització, tant a l'engròs com al detall, de dolços, llaminadures i altres productes alimentaris envasats.\n- La compra, venda, importació, exportació, distribució i comercialització, tant a l'engròs com al detall, de productes d'higiene, joguines i cura per a animals.\n- La compra, venda, importació, exportació, distribució i comercialització, tant a l'engròs com al detall, de productes sanitaris.\n- Activitats d'intermediació comercial sense predomini de productes.\nLa societat podrà realitzar igualment totes aquelles activitats que tinguin la consideració d'accessòries, derivades o complementàries de l'objecte social anteriorment descrit, així com participar en altres societats amb objecte social idèntic, anàleg o complementari.",
     purposeEs: "La sociedad tendrá por objeto:\n- La compra, venta, importación, exportación, distribución y comercialización, tanto al por mayor como al por menor, de relojería, bisutería, accesorios de aparatos electrónicos, artículos de deporte, calzado, textil, juguetes, maletas y artículos de viaje.\n- La compra, venta, importación, exportación, distribución y comercialización, tanto al por mayor como al por menor, de complementos textiles y no textiles, incluyendo, entre otros, paraguas, bolsos, gorras, guantes y artículos similares.\n- La compra, venta, importación, exportación, distribución y comercialización, tanto al por mayor como al por menor, de productos de decoración para el hogar, menaje del hogar y de cocina y textil del hogar (incluyendo, entre otros, edredones, sábanas, cortinas y toallas).\n- La compra, venta, importación, exportación, distribución y comercialización, tanto al por mayor como al por menor, de pequeños electrodomésticos.\n- La compra, venta, importación, exportación, distribución y comercialización, tanto al por mayor como al por menor, de dulces, golosinas y otros productos alimentarios envasados.\n- La compra, venta, importación, exportación, distribución y comercialización, tanto al por mayor como al por menor, de productos de higiene, juguetes y cuidado para animales.\n- La compra, venta, importación, exportación, distribución y comercialización, tanto al por mayor como al por menor, de productos sanitarios.\n- Actividades de intermediación comercial sin predominio de productos.\nLa sociedad podrá realizar igualmente todas aquellas actividades que tengan la consideración de accesorias, derivadas o complementarias del objeto social anteriormente descrito, así como participar en otras sociedades con objeto social idéntico, análogo o complementario.",
-    address: 'Av. Príncep Benlloch 89, Local 3 Espai 4, AD500 Andorra la Vella',
+    address: 'Av. Príncep Benlloch 089, Local 3 Espai 4, AD500 Andorra la Vella',
     phone: '+376 360 929',
     bank: '',
     returnDays: 14,
