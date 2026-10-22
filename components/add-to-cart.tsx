@@ -1,11 +1,12 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Minus, Plus } from '@phosphor-icons/react/dist/ssr';
 import { BtnIcon } from './brand';
 import { useCart } from './cart';
 import { ColorPicker } from './color-picker';
 import { swatchColors } from '@/lib/catalog';
+import { SLIDE_EVENT, VARIANT_EVENT } from './hover-carousel';
 
 export type BuyVariant = { id: number; name: string | null; color?: string | null; stock: number | null };
 
@@ -46,7 +47,23 @@ export function AddToCart({ variants, labels }: { variants: BuyVariant[]; labels
     setVariantId(id);
     setStatus('idle');
     setError('');
+    // Si la ficha tiene carrusel enlazado a los colores, muestra la foto de este color.
+    window.dispatchEvent(new CustomEvent(VARIANT_EVENT, { detail: { variantId: id } }));
   };
+
+  // Y al revés: al pasar de foto en el carrusel, se elige el color de esa foto.
+  useEffect(() => {
+    const onSlide = (e: Event) => {
+      const id = (e as CustomEvent<{ variantId: number }>).detail?.variantId;
+      if (variants.some((x) => x.id === id)) {
+        setVariantId(id);
+        setStatus('idle');
+        setError('');
+      }
+    };
+    window.addEventListener(SLIDE_EVENT, onSlide);
+    return () => window.removeEventListener(SLIDE_EVENT, onSlide);
+  }, [variants]);
 
   const stockText = useMemo(() => {
     if (!v) return null;

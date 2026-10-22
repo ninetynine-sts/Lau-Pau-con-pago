@@ -945,6 +945,45 @@ body::after {
 }
 .lp-detail__figure img[data-loaded='true'] { opacity: 1; transform: scale(1); }
 
+/* Carrusel de la ficha (Mocadors): una foto cada vez; avanza con el ratón en los laterales. */
+.lp-carousel__frame { margin: 0; outline: none; }
+.lp-carousel__frame:focus-visible { box-shadow: inset 0 0 0 1px var(--hair), 0 0 0 2px var(--accent); }
+.lp-carousel__viewport { touch-action: pan-y; user-select: none; -webkit-user-select: none; }
+.lp-carousel__track {
+  list-style: none; margin: 0; padding: 0; display: flex; height: 100%;
+  transition: transform 760ms cubic-bezier(.22, 1, .36, 1);
+  will-change: transform;
+}
+.lp-carousel__track[data-dragging] { transition: none; }
+.lp-carousel__slide { flex: 0 0 100%; height: 100%; min-width: 0; }
+/* Las fotos de mocadors ya traen su margen y su fondo: ocupan todo el marco, sin recortar (son cuadradas como el marco). */
+.lp-carousel .lp-carousel__slide img { padding: 0; object-fit: contain; }
+.lp-carousel__arrow {
+  position: absolute; top: 50%; z-index: 2; translate: 0 -50%;
+  width: 40px; height: 40px; border-radius: 999px; border: 0; cursor: pointer;
+  display: grid; place-items: center; color: var(--label-1);
+  background: var(--glass-strong); box-shadow: var(--shadow-1), inset 0 0 0 1px var(--glass-brd);
+  -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
+  opacity: 0; transition: opacity 260ms var(--ease-out), scale 260ms var(--ease-out);
+}
+.lp-carousel__arrow--prev { left: 14px; }
+.lp-carousel__arrow--next { right: 14px; }
+.lp-carousel__arrow:disabled { opacity: 0 !important; pointer-events: none; }
+.lp-carousel__arrow:focus-visible { opacity: 1; outline: 2px solid var(--accent); outline-offset: 2px; }
+@media (hover: hover) {
+  .lp-carousel__frame:hover .lp-carousel__arrow { opacity: .55; }
+  .lp-carousel[data-zone="-1"] .lp-carousel__arrow--prev,
+  .lp-carousel[data-zone="1"] .lp-carousel__arrow--next { opacity: 1; scale: 1.06; }
+}
+.lp-carousel__meta {
+  margin: 0; display: flex; justify-content: space-between; align-items: baseline; gap: 12px;
+  font-size: 13.5px; color: var(--label-3); font-variant-numeric: tabular-nums;
+}
+.lp-carousel__name { color: var(--label-2); font-weight: 600; }
+@media (prefers-reduced-motion: reduce) {
+  .lp-carousel__track, .lp-carousel__arrow { transition: none; }
+}
+
 /* Galería de la ficha: miniaturas bajo la foto principal. */
 .lp-gallery { display: grid; gap: 12px; align-content: start; }
 .lp-gallery__main { margin: 0; }

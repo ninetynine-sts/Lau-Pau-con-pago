@@ -95,9 +95,17 @@ export const products = [
       { name: { es: 'Negro cachemir', ca: 'Negre caixmir' }, color: '#1A1514,#8A6A4F' },
       { name: { es: 'Marrón con lunares', ca: 'Marró amb pics' }, color: '#6A2D1E,#F5EFE6' }
     ],
-    images: [img('panuelos.webp',
-      'Selección de ocho pañuelos con estampados florales, geométricos y de lunares.',
-      'Selecció de vuit mocadors amb estampats florals, geomètrics i de pics.', 1295, 1214)]
+    // Una foto por estampado, en el mismo orden que los colores: la ficha las enlaza.
+    images: [
+      img('panuelo-1.webp', 'Pañuelo granate con rosas, anudado.', 'Mocador granat amb roses, nuat.', 1400, 1400),
+      img('panuelo-2.webp', 'Pañuelo teja con topitos, anudado.', 'Mocador teula amb topets, nuat.', 1400, 1400),
+      img('panuelo-3.webp', 'Pañuelo granate con flores rosas, anudado.', 'Mocador granat amb flors roses, nuat.', 1400, 1400),
+      img('panuelo-4.webp', 'Pañuelo blanco con lunares negros, anudado.', 'Mocador blanc amb pics negres, nuat.', 1400, 1400),
+      img('panuelo-5.webp', 'Pañuelo negro con lunares blancos, anudado.', 'Mocador negre amb pics blancs, nuat.', 1400, 1400),
+      img('panuelo-6.webp', 'Pañuelo blanco con tigre, anudado.', 'Mocador blanc amb tigre, nuat.', 1400, 1400),
+      img('panuelo-7.webp', 'Pañuelo negro cachemir, anudado.', 'Mocador negre caixmir, nuat.', 1400, 1400),
+      img('panuelo-8.webp', 'Pañuelo marrón con lunares, anudado.', 'Mocador marró amb pics, nuat.', 1400, 1400)
+    ]
   },
   {
     slug: 'bolso-cierre-hueso',

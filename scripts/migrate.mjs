@@ -150,6 +150,27 @@ async function backfillColors(q) {
   return changed;
 }
 
+/**
+ * Mocadors: la foto de grupo se cambia por una foto de cada estampado (carrusel en la
+ * ficha). Solo si la ficha conserva la foto original: nunca pisa fotos puestas en el panel.
+ */
+async function updatePanuelosGallery(q) {
+  const KEY = 'panuelos-gallery-2026-10';
+  if ((await q('select 1 from settings where key = $1', [KEY])).length) return false;
+  const p = seed.products.find((x) => x.slug === 'panuelos');
+  const [row] = await q('select id, images from products where slug = $1', ['panuelos']);
+  let changed = false;
+  if (p && row) {
+    const imgs = typeof row.images === 'string' ? JSON.parse(row.images) : row.images;
+    if (Array.isArray(imgs) && imgs.length === 1 && imgs[0]?.src === '/laupau/productos/panuelos.webp') {
+      await q('update products set images = $2, updated_at = now() where id = $1', [row.id, j(p.images)]);
+      changed = true;
+    }
+  }
+  await q('insert into settings (key, value) values ($1, $2) on conflict (key) do nothing', [KEY, j(true)]);
+  return changed;
+}
+
 async function ensureAdmin(q) {
   const email = process.env.ADMIN_EMAIL?.trim().toLowerCase();
   const password = process.env.ADMIN_PASSWORD;
@@ -185,6 +206,7 @@ try {
   const colored = seeded ? 0 : await backfillColors(conn.query);
   if (colored) console.log(`[db] colores añadidos a ${colored} productos del catálogo inicial`);
   const added = seeded ? 0 : await addCollection(conn.query);
+  if (!seeded && (await updatePanuelosGallery(conn.query))) console.log('[db] mocadors: galería de 8 fotos');
   if (added) console.log(`[db] colección nueva: ${added} productos añadidos`);
   const admin = await ensureAdmin(conn.query);
   console.log(`[db] migraciones aplicadas${seeded ? ' · catálogo inicial cargado' : ''}${admin ? ` · admin creado: ${admin}` : ''}`);

@@ -11,7 +11,8 @@ import { CatalogFilters } from '@/components/catalog-filters';
 import { AddToCart } from '@/components/add-to-cart';
 import { RequestForm } from '@/components/request-form';
 import { ProductGallery } from '@/components/product-gallery';
-import { hasColors, isPersonalizable, type CatalogProduct, type Category } from '@/lib/catalog';
+import { HoverCarousel } from '@/components/hover-carousel';
+import { hasColors, isPersonalizable, usesCarousel, type CatalogProduct, type Category } from '@/lib/catalog';
 import { loc, t } from '@/lib/i18n';
 import { path, type Lang } from '@/lib/routes';
 
@@ -383,7 +384,16 @@ export function ProductView({ lang, p, defaults }: { lang: Lang; p: CatalogProdu
           </ol>
 
           <div className="lp-detail">
-            <ProductGallery p={p} lang={lang} className="lp-detail__figure lp-in" eager label={d.product.photo} />
+            {usesCarousel(p) ? (
+              <HoverCarousel
+                p={p}
+                lang={lang}
+                className="lp-detail__figure lp-in"
+                labels={{ region: loc(p.name, lang), prev: d.product.prevPhoto, next: d.product.nextPhoto, photo: d.product.photo, counter: d.product.photoOf }}
+              />
+            ) : (
+              <ProductGallery p={p} lang={lang} className="lp-detail__figure lp-in" eager label={d.product.photo} />
+            )}
 
             <div className="lp-detail__info">
               {p.categoryName ? (

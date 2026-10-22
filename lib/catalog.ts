@@ -76,3 +76,9 @@ export function colorFromForm(get: (name: string) => string, k: string): string 
   const c2 = c1 && get(`v_${k}_two`) === 'on' ? hex(`v_${k}_c2`) : null;
   return c1 ? (c2 ? `${c1},${c2}` : c1) : null;
 }
+
+/** Fichas que muestran sus fotos en carrusel (paso con el ratón y deslizando en móvil). */
+const CAROUSEL_SLUGS = new Set(['panuelos']);
+export function usesCarousel(p: { slug: string; images: unknown[] }): boolean {
+  return CAROUSEL_SLUGS.has(p.slug) && p.images.length > 1;
+}

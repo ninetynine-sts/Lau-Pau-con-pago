@@ -137,7 +137,7 @@ export type DB = {
   seq: number;
 };
 
-const KEY = 'lp-demo-v3'; // v3: colección de octubre de 2026 (los datos guardados antes no la tienen)
+const KEY = 'lp-demo-v4'; // v4: galería de mocadors (los datos guardados antes no la tienen)
 export const ADMIN = { email: 'admin@laupau.ad', password: 'demo-laupau' };
 export const CUSTOMER = { email: 'maria@exemple.ad', password: 'demo-maria' };
 
