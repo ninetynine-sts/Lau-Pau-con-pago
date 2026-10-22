@@ -551,6 +551,53 @@ em, .lp-italic {
 }
 .lp-card__media img[data-loaded='true'] { opacity: 1; transform: scale(1); }
 
+/* Charm de estrella: el llavero se balancea y la letra va cambiando (ver charm-letters.tsx). */
+.lp-charm { position: absolute; inset: 0; z-index: 0; pointer-events: none; opacity: 0; transition: opacity 400ms var(--ease-out); }
+.lp-charm[data-ready] { opacity: 1; }
+.lp-card__media[data-charm] > img { visibility: hidden; }
+.lp-charm__stage {
+  position: absolute; inset: 0; padding: 8%; display: grid; place-items: center;
+  transform: scale(1); transition: transform 900ms var(--ease-out);
+}
+@media (hover: hover) and (pointer: fine) { .lp-card:hover .lp-charm__stage { transform: scale(1.045); } }
+.lp-charm__fit { position: relative; height: 100%; max-width: 100%; container-type: inline-size; }
+.lp-charm__sway {
+  position: absolute; inset: 0;
+  transform-origin: 35% 5%;
+  animation: lp-charm-sway 5.2s ease-in-out infinite alternate;
+}
+.lp-card__media .lp-charm__sway img { width: 100%; height: 100%; display: block; padding: 0; object-fit: fill; opacity: 1; transform: none; transition: none; }
+.lp-charm[data-paused] .lp-charm__sway, .lp-charm[data-paused] .lp-charm__bead { animation-play-state: paused; }
+@keyframes lp-charm-sway { from { rotate: -1.8deg; } to { rotate: 1.8deg; } }
+/* La cuenta de la letra cuelga del cordón: se mece un poco más que el llavero. */
+.lp-charm__bead {
+  position: absolute; left: 63.4%; top: 41.9%; translate: -50% -50%;
+  transform-origin: 50% 0%;
+  animation: lp-charm-bead 3.1s ease-in-out infinite alternate;
+  perspective: 30cqw;
+}
+@keyframes lp-charm-bead { from { rotate: -3deg; } to { rotate: 3.5deg; } }
+.lp-charm__letter {
+  position: relative; display: block;
+  font-family: var(--font-body); font-weight: 800; font-size: 14cqw; line-height: 1;
+  color: transparent;
+  background: linear-gradient(150deg, #ffb46a 0%, #ff8f33 28%, #ff7a1f 60%, #fb6e14 100%);
+  -webkit-text-stroke: .04em #ff7c20;
+  -webkit-background-clip: text; background-clip: text;
+  transform: rotate(22deg) rotateY(0deg);
+  transition: transform 260ms cubic-bezier(.4, 0, .2, 1), opacity 260ms ease;
+}
+/* Canto de la pieza (acrílico grueso) y su sombra, detrás de la cara de la letra. */
+.lp-charm__letter::before {
+  content: attr(data-l); position: absolute; inset: 0; z-index: -1;
+  color: #ee6410; -webkit-text-stroke: .04em #ee6410;
+  text-shadow:
+    -0.012em 0.01em 0 #e96010, -0.024em 0.02em 0 #e25b0d, -0.036em 0.03em 0 #d9550a,
+    -0.048em 0.04em 0 #cf4f08, -0.058em 0.05em 0 #c44906,
+    -0.07em 0.11em 0.1em rgba(62, 30, 10, .35);
+}
+.lp-charm__letter[data-flip] { transform: rotate(22deg) rotateY(88deg); opacity: .2; }
+
 /* Portada · Mocadors: los modelos se funden encima de la foto de portada al pasar el ratón. */
 .lp-card__cycle { position: absolute; inset: 0; z-index: 0; pointer-events: none; }
 .lp-card__media .lp-card__cycle img {
