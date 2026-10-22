@@ -6,12 +6,26 @@ import { loc, t } from '@/lib/i18n';
 import { path, type Lang } from '@/lib/routes';
 import { hasColors, isPersonalizable, totalStock, type CatalogProduct } from '@/lib/catalog';
 import { ColorDots } from './color-dots';
+import { CardCycle } from './card-cycle';
 
 /**
  * Tarjeta de producto con doble bisel: bandeja exterior + núcleo con la foto.
  * `index` escalona la aparición dentro de cada fila.
  */
-export function ProductCard({ p, lang, priority = false, index = 0 }: { p: CatalogProduct; lang: Lang; priority?: boolean; index?: number }) {
+export function ProductCard({
+  p,
+  lang,
+  priority = false,
+  index = 0,
+  cycle = false
+}: {
+  p: CatalogProduct;
+  lang: Lang;
+  priority?: boolean;
+  index?: number;
+  /** Con el ratón encima, ir mostrando las demás fotos (solo portada · Mocadors). */
+  cycle?: boolean;
+}) {
   const d = t(lang);
   const img = p.images[0];
   const personal = isPersonalizable(p);
@@ -34,6 +48,9 @@ export function ProductCard({ p, lang, priority = false, index = 0 }: { p: Catal
               loading={priority ? 'eager' : 'lazy'}
               decoding="async"
             />
+          ) : null}
+          {cycle && p.images.length > 1 ? (
+            <CardCycle images={p.images.map((im) => ({ src: im.src, width: im.width, height: im.height }))} />
           ) : null}
           <span className="lp-price-glass">
             <Price cents={p.priceCents} size="sm" lang={lang} />

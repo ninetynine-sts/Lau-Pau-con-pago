@@ -237,7 +237,7 @@ export function HomeView({ lang, products, instagram }: { lang: Lang; products: 
           </div>
           <ul className="lp-grid lp-grid--editorial">
             {selection.map((p, n) => (
-              <ProductCard key={p.id} p={p} lang={lang} priority={n === 0} index={n} />
+              <ProductCard key={p.id} p={p} lang={lang} priority={n === 0} index={n} cycle={usesCarousel(p)} />
             ))}
           </ul>
         </div>

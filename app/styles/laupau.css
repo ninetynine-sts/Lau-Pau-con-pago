@@ -551,6 +551,19 @@ em, .lp-italic {
 }
 .lp-card__media img[data-loaded='true'] { opacity: 1; transform: scale(1); }
 
+/* Portada · Mocadors: los modelos se funden encima de la foto de portada al pasar el ratón. */
+.lp-card__cycle { position: absolute; inset: 0; z-index: 0; pointer-events: none; }
+.lp-card__media .lp-card__cycle img {
+  position: absolute; inset: 0;
+  opacity: 0; transform: scale(1);
+  transition: opacity 900ms var(--ease-io), transform 900ms var(--ease-out);
+}
+.lp-card__media .lp-card__cycle img[data-prev] { opacity: 1; z-index: 1; }
+.lp-card__media .lp-card__cycle img[data-active] { opacity: 1; z-index: 2; }
+@media (hover: hover) and (pointer: fine) {
+  .lp-card:hover .lp-card__media .lp-card__cycle img { transform: scale(1.045); }
+}
+
 .lp-card__body {
   display: grid; gap: 7px; padding: 16px 18px 18px;
   flex: none; align-content: start; justify-items: start; text-align: left;
