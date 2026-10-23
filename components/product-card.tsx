@@ -7,7 +7,6 @@ import { path, type Lang } from '@/lib/routes';
 import { hasColors, isPersonalizable, totalStock, type CatalogProduct } from '@/lib/catalog';
 import { ColorDots } from './color-dots';
 import { CardCycle } from './card-cycle';
-import { CharmLetters } from './charm-letters';
 
 /**
  * Tarjeta de producto con doble bisel: bandeja exterior + núcleo con la foto.
@@ -49,10 +48,6 @@ export function ProductCard({
               loading={priority ? 'eager' : 'lazy'}
               decoding="async"
             />
-          ) : null}
-          {p.slug === 'charm-estrella-personalizado' && img?.src.endsWith('/charm-estrella-personalizado.webp') ? (
-            // La misma foto sin la letra: la letra se dibuja encima y va cambiando.
-            <CharmLetters src="/laupau/productos/charm-estrella-sin-letra.webp" width={img.width ?? 1145} height={img.height ?? 1374} />
           ) : null}
           {cycle && p.images.length > 1 ? (
             <CardCycle images={p.images.map((im) => ({ src: im.src, width: im.width, height: im.height }))} />
